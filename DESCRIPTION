@@ -7,3 +7,4 @@ Author: Nikola Chochkov
 Maintainer: Nikola Chochkov <nikola@adeven.com>
 Description: More about what it does (maybe more than one line)
 License: BSD
+Depends: data.table,whisker,optparse,yaml,parallel

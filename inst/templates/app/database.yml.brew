@@ -1,0 +1,59 @@
+# Contains Database connection settings for all connections and environments
+# that your Rport app will work on.
+#
+# Note: Please do not use the & yaml syntax as the R YAML driver doesnt work
+# well with it.
+#
+# Other than that, feel free to edit these settings, add/remove environments and
+# connections. For more details refer to the Rport readme.
+
+development:
+  read:
+    adapter: ''
+    encoding: ''
+    pool: ''
+    username: ''
+    password: ''
+    host: localhost
+
+  write:
+    adapter: ''
+    encoding: ''
+    pool: ''
+    username: ''
+    password: ''
+    host: localhost
+
+staging:
+  read:
+    adapter: ''
+    encoding: ''
+    pool: ''
+    username: ''
+    password: ''
+    host: localhost
+
+  write:
+    adapter: ''
+    encoding: ''
+    pool: ''
+    username: ''
+    password: ''
+    host: localhost
+
+production:
+  read:
+    adapter: ''
+    encoding: ''
+    pool: ''
+    username: ''
+    password: ''
+    host: localhost
+
+  write:
+    adapter: ''
+    encoding: ''
+    pool: ''
+    username: ''
+    password: ''
+    host: localhost

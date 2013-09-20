@@ -2,7 +2,7 @@
 \alias{rport.sql}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-%%  ~~function to do ... ~~
+  ~~function to do ... ~~
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
@@ -53,13 +53,13 @@ rport.sql(query, key = NULL, cache = FALSE)
 ##--	or do  help(data=index)  for the standard data sets.
 
 ## The function is currently defined as
-function (query, key = NULL, cache = FALSE) 
+function (query, key = NULL, cache = FALSE)
 {
     if (exists("read.con", envir = .RportConnEnv)) {
         runr.cat("Reading:", query)
-        res <- data.table(dbGetQuery(get("read.con", envir = .RportConnEnv), 
+        res <- data.table(dbGetQuery(get("read.con", envir = .RportConnEnv),
             query))
-        if (!is.null(key) && !is.null(res[[key]])) 
+        if (!is.null(key) && !is.null(res[[key]]))
             setkeyv(res, key)
         res
     }

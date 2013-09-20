@@ -1,0 +1,7 @@
+#!/usr/bin/Rscript
+
+library(rport)
+
+# todo parse CLI options
+
+rport.new()

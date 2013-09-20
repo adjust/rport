@@ -1,0 +1,6 @@
+# Place your R code for project <%= project.name %> here
+#
+
+<%= project.name.r %>.main <- function() {
+  'Hi! My name is Mr. \'<%= project.name %>\' !'
+}
