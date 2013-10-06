@@ -4,6 +4,8 @@
 #' @param name name of the app
 #' @param name of the project
 #'
+#' @export
+#'
 rport.app.new <- function(app.name, root.dir=getwd()) {
   app.name.fs <- tolower(gsub('\\s+', '_', app.name))
 
@@ -36,21 +38,23 @@ rport.app.new <- function(app.name, root.dir=getwd()) {
 
   src    <- file.path(src.dir, 'README.md.brew')
   target <- file.path(app.root.dir, 'README.md')
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
 
   src    <- file.path(src.dir, 'database.yml.brew')
   target <- file.path(app.root.dir, 'config', 'database.yml')
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
 
   src    <- file.path(src.dir, 'settings.R.brew')
   target <- file.path(app.root.dir, 'config', 'settings.R')
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
 }
 
 #' Creates a new project with templates.
 #'
 #' @param name name of the app
 #' @param  name of the project
+#'
+#' @export
 #'
 rport.project.new <- function(project.name, root.dir=getwd()) {
   if (! rport.is.root.dir(root.dir))
@@ -70,27 +74,25 @@ rport.project.new <- function(project.name, root.dir=getwd()) {
 
   src    <- file.path(src.dir, 'README.md.brew')
   target <- file.path(root.dir, 'doc', sprintf('%s.md', project.name.fs))
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
 
   src    <- file.path(src.dir, 'executable.R.brew')
   target <- file.path(root.dir, 'bin', sprintf('%s.R', project.name.fs))
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
   Sys.chmod(target, '777')
 
   src    <- file.path(src.dir, 'opts.R.brew')
   target <- file.path(root.dir, 'lib', 'opts', sprintf('%s.R', project.name.fs))
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
 
-  code.dir.name <- file.path(root.dir, 'lib', 'functions', project.name.fs)
+  code.dir.name <- file.path(root.dir, 'lib', 'functions', project.name.fs)
   if (! file.exists(code.dir.name))
     dir.create(code.dir.name)
 
   src    <- file.path(src.dir, 'main.R.brew')
   target <- file.path(root.dir, 'lib', 'functions', project.name.fs, 'main.R')
-  rport.internal.copy.template(src, target, env)
+  rport.copy.template(src, target, env)
 }
-
-### Private functions
 
 #' Is the given path a root directory of an Rport app
 #'
@@ -112,7 +114,7 @@ rport.is.root.dir <- function(path) {
   all(file.exists(files))
 }
 
-rport.internal.copy.template <- function(src, target, envir) {
+rport.copy.template <- function(src, target, envir) {
   if (! file.exists(target)) {
     brew::brew(
       file   = src,

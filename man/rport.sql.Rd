@@ -1,14 +1,14 @@
-\name{rport.sql}
-\alias{rport.sql}
+\name{rport.app.new}
+\alias{rport.app.new}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
   ~~function to do ... ~~
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of what the function does. ~~
+Generates the directory structure and file templates for a new Rport app.
 }
 \usage{
-rport.sql(query, key = NULL, cache = FALSE)
+(query, key = NULL, cache = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

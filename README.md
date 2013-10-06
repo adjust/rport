@@ -31,12 +31,8 @@ Rport and it's open-sourced as an R extension.
 
 ## Quick Start
 
-Rport is distributed as an R package and is available from CRAN, so what you
-need to do to start using it is:
-
-    install.packages('rport')
-
-Alternativey, install from GitHub:
+Rport is distributed as an R package and you can get the most up-to-date version
+from GitHub:
 
     library(devtools)
     install_github('rport', 'adeven')

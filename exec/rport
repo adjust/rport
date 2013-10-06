@@ -2,6 +2,6 @@
 
 library(rport)
 
-# todo parse CLI options
+# TODO parse CLI options
 
 rport.new()
