@@ -116,8 +116,6 @@ Using Rport in the scenario above, you'll define all your connections in a
 Rails). The difference here is that with Rport you can not only define multiple
 environments, but also multiple connections within each environment.
 
-    {% codeblock lang:r %}
-
     # bootstrap production environment
     rport('production')
 
@@ -129,8 +127,6 @@ environments, but also multiple connections within each environment.
 
     # `dat` and `old.dat` are now `data.table` objects with results from the
     # `production->read` and `production->backup` connections respectively
-
-    {% endcodeblock %}
 
 Few things are worth mentioning in this snippet:
 
@@ -163,14 +159,12 @@ an unchanged SQL query to run again when rerunning a script to test your R code.
 Rport's connection accessors allow you to cache results using R's `load` and
 `save` routines.
 
-    {% codeblock lang:r %}
     rport('development')
 
     # Read the data in memory only if not found in the cache.
     dat <- rport.read('select app_id, rank from application_ranks', cache=TRUE)
 
     # do crazy crunching on `dat`
-    {% endcodeblock %}
 
 This query will now only run once and subsequent executions of the script will
 read and return the cached R object from the file system.
