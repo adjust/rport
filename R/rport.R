@@ -28,6 +28,18 @@ rport <- function(env) {
   }
 }
 
+#' Prepares Rport for exist.
+#'
+#'  * closes database connections
+#'
+#' @param env string specifying configuration settings to use.
+#'
+#' @export
+#'
+rport.runtime.exit <- function() {
+  rport.db.disconnect()
+}
+
 #' The root directory of the Rport app. For now consider this to be the working
 #' directory of the R process.
 rport.root <- function() {

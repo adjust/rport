@@ -2,7 +2,7 @@
 # # project <%= project.name %> will receive. See a small example:
 #
 # library(optparse)
-# 
+#
 # opts.list <- list (
 #   make_option(c('-o', '--option'),
 #     help='Default %default',
@@ -10,6 +10,6 @@
 #     type='integer'
 #   )
 # )
-# 
+#
 # opts.parse <- OptionParser(option_list=opts.list)
 # opts <- parse_args(opts.parse, positional_arguments=TRUE)

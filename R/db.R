@@ -22,6 +22,8 @@ rport.db.connect <- function(connections) {
            dbConnect(connections[[key]]$adapter,
                      dbname=connections[[key]]$database,
                      user=connections[[key]]$user,
+                     password=connections[[key]]$password,
+                     port=connections[[key]]$port,
                      host=connections[[key]]$host),
            envir=.RportRuntimeEnv)
   }
@@ -71,4 +73,17 @@ rport.db.query <- function(conn, query, key, cache) {
     rport.db.cache.save(query, conn, res)
 
   res
+}
+
+rport.db.disconnect <- function() {
+  for (obj in ls(envir=.RportRuntimeEnv)) {
+    rport.log('Attempting to close', obj)
+    r <- dbDisconnect(obj)
+
+    if (r)
+      rport.log('Connection closed successfully.')
+
+    else
+      rport.log('Error closing database connection', obj)
+  }
 }

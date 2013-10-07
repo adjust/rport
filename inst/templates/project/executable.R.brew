@@ -1,20 +1,31 @@
 #!/usr/bin/Rscript
 
-library(rport)
+log.file <- file.path('log', '<%= project.name.fs %>')
 
-# After setting up your database.yml, bootstrap your app with database access:
-# rport(Sys.getenv('RPORT_ENV', 'development'))
+sink(file(log.file, open='a'), type='message')
+sink(log.file, type='output')
 
-# add `opts=FALSE` to skip loading opts for this project or `shared=FALSE` to
-# not load shared R code from lib/
-rport.bootstrap('executable', project='<%= project.name.r %>')
+tryCatch({
+  library(rport)
 
-# source(file.path('lib', 'opts', '<%= project.name.fs %>.R'))
-# source(file.path('lib', 'projects', '<%= project.name.fs %>', 'main.R'))
+  # After setting up your database.yml, bootstrap your app with database access:
+  # rport(Sys.getenv('RPORT_ENV', 'development'))
 
-print(<%= project.name.r %>.main())
+  # add `opts=FALSE` to skip loading opts for this project or `shared=FALSE` to
+  # not load shared R code from lib/
+  rport.bootstrap('executable', project='<%= project.name.fs %>')
 
-# For this executable you can also:
-#
-# bootstrap mailing using `rport.bootstrap('mailing')`
-# bootstrap parallel using `rport.bootstrap('parallel')`
+  print(<%= project.name.r %>.main())
+
+  # For this executable you can also:
+  #
+  # bootstrap mailing using `rport.bootstrap('mailing')`
+  # bootstrap parallel using `rport.bootstrap('parallel')`
+  #
+},
+
+finally={
+  rport.runtime.exit()
+  sink()
+  sink(type='message')
+})
