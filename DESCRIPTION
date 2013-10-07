@@ -6,17 +6,11 @@ Date: 2013-09-20
 Author: Nikola Chochkov
 Maintainer: Nikola Chochkov <nikola@adeven.com>
 Description: Provides facilities for:
-
-* Handling multiple database connections within one R session
-
-* Caching results from long SQL statements in development
-
-* Parallel jobs processing
-
-* Building UNIX executables
-
-* Organizing the growing codebase
-    
+    * Handling multiple database connections within one R session
+    * Caching results from long SQL statements in development
+    * Parallel jobs processing
+    * Building UNIX executables
+    * Organizing the growing codebase
 License: MIT License
 Depends:
     data.table,whisker,optparse,yaml,parallel,digest
@@ -28,3 +22,4 @@ Collate:
     'db_cache.R'
     'initializers.R'
     'parallel.R'
+    'bootstrappers.R'

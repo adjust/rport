@@ -23,7 +23,8 @@ rport.app.new <- function(app.name, root.dir=getwd()) {
             'doc',
             'lib',
             file.path('lib', 'opts'),
-            file.path('lib', 'functions'),
+            file.path('lib', 'projects'),
+            file.path('lib', 'shared'),
             'log',
             'script',
             'spec')
@@ -85,12 +86,12 @@ rport.project.new <- function(project.name, root.dir=getwd()) {
   target <- file.path(root.dir, 'lib', 'opts', sprintf('%s.R', project.name.fs))
   rport.copy.template(src, target, env)
 
-  code.dir.name <- file.path(root.dir, 'lib', 'functions', project.name.fs)
+  code.dir.name <- file.path(root.dir, 'lib', 'projects', project.name.fs)
   if (! file.exists(code.dir.name))
     dir.create(code.dir.name)
 
   src    <- file.path(src.dir, 'main.R.brew')
-  target <- file.path(root.dir, 'lib', 'functions', project.name.fs, 'main.R')
+  target <- file.path(root.dir, 'lib', 'projects', project.name.fs, 'main.R')
   rport.copy.template(src, target, env)
 }
 
@@ -105,7 +106,7 @@ rport.is.root.dir <- function(path) {
 
   files <- file.path(path, c(
     'bin',
-    file.path('lib', 'functions'),
+    file.path('lib', 'projects'),
     file.path('lib', 'opts'),
     file.path('config', 'database.yml'),
     file.path('config', 'settings.R')

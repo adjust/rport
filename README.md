@@ -82,11 +82,12 @@ An Rport app with two projects might have the following folder structure:
     │   └── settings.R
     ├── doc
     ├── lib
-    │   ├── functions
+    │   ├── projects
     │   │   ├── apptrace_newsletter
     │   │   │   └── main.R
     │   │   └── new_apps_report
-    │   │       └── main.R
+    │   │   │   └── main.R
+    │   ├── shared
     │   └── opts
     │       ├── apptrace_newsletter.R
     │       └── new_apps_report.R
@@ -173,6 +174,79 @@ To ensure that nothing bad ever happens to you using this caching, it only works
 in development and it logs clearly when reading from cache. Furthermore, it
 works on a per-connection basis, so the same queries under different connections
 will be cached separately.
+
+### Parallel report compilation
+
+Since R 2.15 the `parallel` package is part of R Core. Rport provides some
+wrappers around that package to address specific use cases.
+
+For example a newsletter or report will likely be constituted of several
+independent items that could probably be generated independently to gain
+performance.
+
+    rport('production')
+
+    users.stats <- function(opts) {
+      sql <- '
+        SELECT count(*)
+        FROM users
+        WHERE created_at >= %s
+      '
+
+      rport.apptrace(sprintf(sql, opts$start_date))
+    }
+
+    products.stats <- function(opts) {
+      sql <- '
+        SELECT count(*)
+        FROM products
+        WHERE created_at >= %s
+      '
+
+      rport.apptrace(sprintf(sql, opts$start_date))
+    }
+
+    rport.bootstrap('parallel', cluster.size=8)
+
+    # run the components in parallel
+    result = rport.parallel (
+      useres   = { users.stats, opts },
+      products = { products.stats, opts }
+    )
+
+    # result is now a list with the results like:
+    # list (users=data.table(..), products=data.table(..))
+
+### Working with Executables
+
+Executables are a common interface to our Rport apps. We use them to schedule
+cron jobs (e.g. reports generation, aggregations, etc.) or to run other
+analytics tasks. Rport uses Rscript for creation of cross-platform executables.
+
+The `rport.project.new()` initializer already created a file in the `bin/`
+folder for you. Rport will also automatically load all R files relevant to your
+project.
+
+#### CLI options
+
+Rport manages CLI options using the R standard lib `optparse` package and the
+convention of placing opts files under `lib/opts/my_script_name.R`. Check what
+`rport.project.new()` generated for you above or the [sample app][sample_app]
+for an illustration.
+
+#### Logging
+
+Rport writes a lot about what it's doing either interactively or in log files.
+You can use these logs to get an idea about query and script execution times as
+well as debugging.
+
+The convention for executables is that all output is `sink`ed (including output
+from parallel workers) to `log/my_script_name.log`.
+
+## Summary
+
+Rport is an ambitious project under ongoing development. Be sure to follow the
+[GitHub repository][rport] for all updates.
 
 ## See more
 

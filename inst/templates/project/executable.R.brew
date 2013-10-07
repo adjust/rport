@@ -2,18 +2,19 @@
 
 library(rport)
 
-# To bootstrap your app with database connection:
+# After setting up your database.yml, bootstrap your app with database access:
 # rport(Sys.getenv('RPORT_ENV', 'development'))
 
-# TODO - provide mechanism for automatically loading all files like:
-# 'lib/functions/proj/*.R'
+# add `opts=FALSE` to skip loading opts for this project or `shared=FALSE` to
+# not load shared R code from lib/
+rport.bootstrap('executable', project='<%= project.name.r %>')
 
-source(file.path('lib', 'opts', '<%= project.name.fs %>.R'))
-source(file.path('lib', 'functions', '<%= project.name.fs %>', 'main.R'))
+# source(file.path('lib', 'opts', '<%= project.name.fs %>.R'))
+# source(file.path('lib', 'projects', '<%= project.name.fs %>', 'main.R'))
 
 print(<%= project.name.r %>.main())
 
 # For this executable you can also:
 #
-# bootstrap mailing using `rport.bootstrap('mail')`
+# bootstrap mailing using `rport.bootstrap('mailing')`
 # bootstrap parallel using `rport.bootstrap('parallel')`
