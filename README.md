@@ -176,7 +176,7 @@ will be cached separately.
 
 ## See more
 
-Read the blog post for more of the features.
+Read the [blog post][blog_post] for more of the features.
 
 ## License
 
@@ -206,3 +206,4 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 [data_table]: http://cran.r-project.org/web/packages/data.table/index.html "The Data Table R Package"
 [adjust]: http://adjust.io "Adjust"
 [apptrace]: http://apptrace.com "Apptrace"
+[blog_post]: http://big-elephants.com/2013-10/rport-business-intelligence-apps-with-r/ "Rport Blog Post"
