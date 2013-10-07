@@ -30,7 +30,7 @@ rport.app.new <- function(app.name, root.dir=getwd()) {
   sapply(dirs, function(d) { dir.create(file.path(app.root.dir, d)) })
 
   # What variables will be available for `brew` template interpolation
-  env <- new.env('.RportTemplateGeneration')
+  env <- new.env()
   assign('app.name', app.name, envir=env)
 
   # Copy necessary templates
@@ -65,7 +65,7 @@ rport.project.new <- function(project.name, root.dir=getwd()) {
   project.name.r  <- tolower(gsub('(\\s+|-+)', '.', project.name))
 
   # what variables will be available for `brew` template interpolation
-  env <- new.env('.RportTemplateGeneration')
+  env <- new.env()
   assign('project.name.fs', project.name.fs, envir=env)
   assign('project.name.r', project.name.r, envir=env)
   assign('project.name', project.name, envir=env)
