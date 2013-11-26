@@ -6,7 +6,7 @@ analysis that you'd likely have as a cron job, asynchronous task, etc.
 
 #### Running specs
 
-Rport generated a dummy test file under `spec/<%= project.name.fs/`. On the shell
+Rport generated a dummy test file under `spec/<%= project.name.fs %>/`. On the shell
 issue:
 
     $ ./tests/all
