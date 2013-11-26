@@ -12,63 +12,63 @@
 
 development:
   read:
-    adapter: PostgreSQL
-    rdriver: RPostgreSQL
+    adapter: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
     username: my_user
     password: ''
     host: localhost
+    port: 5432
 
   write:
-    adapter: ''
-    rdriver: RPostgreSQL
+    adapter: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
-    username: ''
+    username: postgres
     password: ''
     host: localhost
+    port: 5432
 
 staging:
   read:
-    adapter: ''
-    rdriver: RPostgreSQL
+    adapter: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
-    username: ''
+    username: postgres
     password: ''
     host: localhost
+    port: 5432
 
   write:
-    adapter: ''
-    rdriver: RPostgreSQL
+    adapter: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
-    username: ''
+    username: postgres
     password: ''
     host: localhost
+    port: 5432
 
 production:
   read:
-    adapter: ''
-    rdriver: RPostgreSQL
+    adapter: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
-    username: ''
+    username: postgres
     password: ''
     host: localhost
+    port: 5432
 
   write:
-    adapter: ''
-    rdriver: RPostgreSQL
+    adapter: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
-    username: ''
+    username: postgres
     password: ''
     host: localhost
+    port: 5432

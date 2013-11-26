@@ -48,6 +48,11 @@ rport.app.new <- function(app.name, root.dir=getwd()) {
   src    <- file.path(src.dir, 'settings.R.brew')
   target <- file.path(app.root.dir, 'config', 'settings.R')
   rport.copy.template(src, target, env)
+
+  src    <- file.path(src.dir, 'all.brew')
+  target <- file.path(app.root.dir, 'spec', 'all')
+  rport.copy.template(src, target, env)
+  Sys.chmod(target, '777')
 }
 
 #' Creates a new project with templates.
@@ -93,6 +98,15 @@ rport.project.new <- function(project.name, root.dir=getwd()) {
   src    <- file.path(src.dir, 'main.R.brew')
   target <- file.path(root.dir, 'lib', 'projects', project.name.fs, 'main.R')
   rport.copy.template(src, target, env)
+
+  spec.dir.name <- file.path(root.dir, 'spec', project.name.fs)
+  if (! file.exists(spec.dir.name))
+    dir.create(spec.dir.name)
+
+  src    <- file.path(src.dir, 'spec.R.brew')
+  target <- file.path(root.dir, 'spec', project.name.fs, 'main_spec.R')
+  rport.copy.template(src, target, env)
+
 }
 
 #' Is the given path a root directory of an Rport app

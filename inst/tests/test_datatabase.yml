@@ -1,0 +1,41 @@
+development:
+  read:
+    adapter: RPostgreSQL
+    database: rport_test
+    encoding: ''
+    pool: ''
+    username: postgres
+    password: ''
+    host: localhost
+    port: 5432
+
+  write:
+    adapter: RPostgreSQL
+    database: rport_test
+    encoding: ''
+    pool: ''
+    username: postgres
+    password: ''
+    host: localhost
+    port: 5432
+
+staging:
+  read:
+    adapter: RPostgreSQL
+    database: rport_test
+    encoding: ''
+    pool: ''
+    username: postgres
+    password: ''
+    host: localhost
+    port: 5432
+
+  write:
+    adapter: RPostgreSQL
+    database: rport_test
+    encoding: ''
+    pool: ''
+    username: postgres
+    password: ''
+    host: localhost
+    port: 5432

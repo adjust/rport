@@ -1,0 +1,9 @@
+#!/usr/bin/Rscript
+
+# This script automatically runs the specs found in spec/ folder of your project
+
+library(rport)
+library(testthat)
+
+test_file('inst/tests/initializers.R')
+test_file('inst/tests/specs.R')

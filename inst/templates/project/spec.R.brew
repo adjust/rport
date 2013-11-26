@@ -1,0 +1,5 @@
+context('Specs for <%= project.name %>')
+
+test_that('Make sure you add proper tests here', {
+  expect_that(TRUE, is_true())
+})

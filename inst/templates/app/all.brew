@@ -1,0 +1,8 @@
+#!/usr/bin/Rscript
+
+# This script automatically runs the specs found in spec/ folder of your project
+
+library(rport)
+library(testthat)
+
+rport.specs.all()
