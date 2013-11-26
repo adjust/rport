@@ -1,6 +1,7 @@
 development:
   read:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: rport_test
     encoding: ''
     pool: ''
@@ -10,7 +11,8 @@ development:
     port: 5432
 
   write:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: rport_test
     encoding: ''
     pool: ''
@@ -21,7 +23,8 @@ development:
 
 staging:
   read:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: rport_test
     encoding: ''
     pool: ''
@@ -31,7 +34,8 @@ staging:
     port: 5432
 
   write:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: rport_test
     encoding: ''
     pool: ''

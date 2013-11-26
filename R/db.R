@@ -16,10 +16,10 @@ rport.db.connect <- function(connections) {
     if (! exists(sprintf('rport.%s', key), envir=.GlobalEnv))
       eval(parse(text=func.def), envir=.GlobalEnv)
 
-    require(connections[[key]]$rdriver, character.only=TRUE)
+    require(connections[[key]]$package, character.only=TRUE)
 
     assign(key,
-           dbConnect(connections[[key]]$adapter,
+           dbConnect(connections[[key]]$driver,
                      dbname=connections[[key]]$database,
                      user=connections[[key]]$user,
                      password=connections[[key]]$password,

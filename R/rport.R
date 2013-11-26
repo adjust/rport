@@ -17,7 +17,7 @@ rport <- function(env) {
     config <- yaml.load_file(db.config)
 
     if (is.null(config[[env]]))
-      stop(sprintf('Environment %s is not defined', env))
+      stop(sprintf('Environment %s is not defined in config/database.yml', env))
 
     assign('rport.environment', env, envir=.RportRuntimeEnv)
     rport.db.connect(config[[env]])

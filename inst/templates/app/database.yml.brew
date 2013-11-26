@@ -12,7 +12,8 @@
 
 development:
   read:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
@@ -22,7 +23,8 @@ development:
     port: 5432
 
   write:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
@@ -33,7 +35,8 @@ development:
 
 staging:
   read:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
@@ -43,7 +46,8 @@ staging:
     port: 5432
 
   write:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
@@ -54,7 +58,8 @@ staging:
 
 production:
   read:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
@@ -64,7 +69,8 @@ production:
     port: 5432
 
   write:
-    adapter: RPostgreSQL
+    driver: PostgreSQL
+    package: RPostgreSQL
     database: my_database
     encoding: ''
     pool: ''
