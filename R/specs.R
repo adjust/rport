@@ -4,6 +4,8 @@
 #'
 #' @param root.dir the path of the app
 #'
+#' @export
+#'
 rport.specs.all <- function(root.dir=getwd()) {
   path  <- file.path(root.dir, 'spec')
   files <- list.files(path, pattern='\\.[rR]', recursive=TRUE, full.names=TRUE)
