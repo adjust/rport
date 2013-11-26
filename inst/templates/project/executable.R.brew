@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 
-log.file <- file.path('log', '<%= project.name.fs %>')
+log.file <- file.path('log', '<%= project.name.fs %>.log')
 
 sink(file(log.file, open='a'), type='message')
 sink(log.file, type='output')
