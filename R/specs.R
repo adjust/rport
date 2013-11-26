@@ -13,6 +13,6 @@ rport.specs.all <- function(root.dir=getwd()) {
   if (length(files) > 0) {
     sapply(files, test_file)
   } else {
-    cat('No tests found in', path)
+    cat('No tests found in', path, '\n')
   }
 }
