@@ -78,7 +78,7 @@ rport.db.query <- function(conn, query, key, cache) {
 rport.db.disconnect <- function() {
   for (obj in ls(envir=.RportRuntimeEnv)) {
     rport.log('Attempting to close', obj)
-    r <- dbDisconnect(obj)
+    r <- dbDisconnect(get(obj, envir=.RportRuntimeEnv))
 
     if (r)
       rport.log('Connection closed successfully.')
