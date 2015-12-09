@@ -1,24 +1,27 @@
 source('spec_helper.R', local=TRUE)
 
-app <- 'my_app'
+app.name <- 'my_app'
 
-unlink(app, recursive=TRUE)
+unlink(app.name, recursive=TRUE)
 
-rport.app.new(app)
+rport.app.new(app.name)
 
-file.copy('test_datatabase.yml', sprintf('%s/config/database.yml', app),
+file.copy('test_datatabase.yml', sprintf('%s/config/database.yml', app.name),
           overwrite=TRUE)
 
 old.wd <- getwd()
-setwd(app)
-
-rport('development')
+setwd(app.name)
 
 context('Testing performing DB requests')
 
-test_that('rport.db.cache.clean removes cache that isnt in .Rportcache', {
-  rport.db.query('write', 'select 1')
+test_that('rport.db.connection retrieves database connection', {
+  rport('development')
+
+  conn <- rport.db.connection('write')
+
+  expect_that(inherits(conn, 'DBIConnection'), is_true())
 })
 
 setwd(old.wd)
-rport
+
+unlink(app.name, recursive=TRUE)

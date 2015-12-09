@@ -7,3 +7,4 @@ library(testthat)
 
 test_file('inst/tests/initializers.R')
 test_file('inst/tests/specs.R')
+test_file('inst/tests/db.R')
