@@ -39,6 +39,22 @@ rport.db.helper.render <- function(key) {
   whisker.render(template, list(name=key))
 }
 
+#' Retrieve database connection by name
+#'
+#' @export
+#'
+rport.db.connection <- function(name) {
+  if (! exists(name, envir=.RportRuntimeEnv))
+    stop('Connection %s not found in envir .RportRuntimeEnv', conn)
+
+  conn <- get(name, envir=.RportRuntimeEnv)
+
+  if (! inherits(conn, 'DBIConnection'))
+    stop('Object %s is not a database connection.', name)
+
+  conn
+}
+
 #' Runns a query against given db connection.
 #'
 #' @export
