@@ -1,9 +1,11 @@
 #!/usr/bin/Rscript
 
-log.file <- file.path('log', '<%= project.name.fs %>.log')
+log.file.name <- file.path('log', '<%= project.name.fs %>.log')
+log.file <- file(log.file.name, open='a')
 
-sink(file(log.file, open='a'), type='message')
+sink(log.file, type='message')
 sink(log.file, type='output')
+
 
 tryCatch({
   library(rport)
@@ -16,12 +18,6 @@ tryCatch({
   rport.bootstrap('executable', project='<%= project.name.fs %>')
 
   print(<%= project.name.r %>.main())
-
-  # For this executable you can also:
-  #
-  # bootstrap mailing using `rport.bootstrap('mailing')`
-  # bootstrap parallel using `rport.bootstrap('parallel')`
-  #
 },
 
 finally={
