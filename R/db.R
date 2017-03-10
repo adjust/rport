@@ -18,8 +18,11 @@ rport.db.connect <- function(connections) {
 
     require(connections[[key]]$package, character.only=TRUE)
 
+    driver <- dbDriver("PostgreSQL", max.con=32)
+
     assign(key,
-           dbConnect(connections[[key]]$driver,
+           .dbConnect(drv=driver,
+                     application_name=connections[[key]]$application_name,
                      dbname=connections[[key]]$database,
                      user=connections[[key]]$user,
                      password=connections[[key]]$password,
@@ -27,6 +30,15 @@ rport.db.connect <- function(connections) {
                      host=connections[[key]]$host),
            envir=.RportRuntimeEnv)
   }
+}
+
+# A wrapper around dbConnect()
+.dbConnect <- function(drv, application_name, ...) {
+  old <- Sys.getenv("PGAPPNAME")
+  Sys.setenv(PGAPPNAME=application_name)
+  conn <- dbConnect(...)
+  Sys.setenv(PGAPPNAME=old)
+  conn
 }
 
 # Template for magic database query functions.

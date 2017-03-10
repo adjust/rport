@@ -6,6 +6,11 @@ Rport is an R package that greatly facilitates common tasks found in many R
 Business Intelligence apps. It bridges R and SQL analytics similarly to how
 Rails bridges Ruby and Web Development.
 
+## TODO
+
+- https://github.com/adjust/rport/issues/2
+- https://github.com/adjust/rport/issues/7
+
 ## Introduction
 
 From our analytics work on data from [Adjust][adjust] and [Apptrace][apptrace],

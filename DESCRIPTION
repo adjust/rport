@@ -1,10 +1,10 @@
 Package: rport
 Type: Package
 Title: Framework for building R analytics apps on top of SQL databases.
-Version: 0.0.1
-Date: 2013-09-20
+Version: 0.1.0
+Date: 2017-03-10
 Author: Nikola Chochkov
-Maintainer: Nikola Chochkov <nikola@adeven.com>
+Maintainer: Nikola Chochkov <nikola@adjust.com>
 Description: Provides facilities for:
     * Handling multiple database connections within one R session
     * Caching results from long SQL statements in development
@@ -13,7 +13,7 @@ Description: Provides facilities for:
     * Organizing the growing codebase
 License: MIT License
 Depends:
-    data.table,whisker,optparse,yaml,parallel,digest
+    data.table,whisker,optparse,yaml,parallel,digest,brew,RPostgreSQL
 Collate:
     'environment.R'
     'logger.R'
