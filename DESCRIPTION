@@ -15,12 +15,9 @@ License: MIT License
 Depends:
     data.table,whisker,optparse,yaml,parallel,digest,brew,RPostgreSQL
 Collate:
-    'environment.R'
-    'logger.R'
-    'rport.R'
-    'db.R'
-    'db_cache.R'
-    'initializers.R'
-    'parallel.R'
-    'bootstrappers.R'
-    'specs.R'
+  'bootstrappers.R'
+  'rport.R'
+  'initializers.R'
+  'logger.R'
+  'specs.R'
+RoxygenNote: 6.0.1

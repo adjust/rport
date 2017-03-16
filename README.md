@@ -1,3 +1,21 @@
+- improve working with multible databases.
+  - connect lazy
+  - don't connect all connections at the same time because we'll have to
+    maintain dozens of connections most of which we dont use.
+  - don't expect connections to be disconnected within the session but provide
+    disconnect.db()
+- introduce easy access to data in a sharded environment.
+- introduce parallelism that supports execution of functions and not necessarily
+  only simple SQL. The point is that our experience shows that we source data for
+  reports from multiple sources that might each take time and often we work with
+  helpers or enable no-sql. The point is that we have
+
+---
+side aspects:
+- Simplified syntax and functionality
+- Bring travis integration
+- code fixes
+
 ## Disclaimer
 
 This project is still under development; CRAN release pending.
@@ -182,30 +200,33 @@ Few things are worth mentioning in this snippet:
   why we introduced this dependency, just check out this fantastic package from
   the link above.
 
-#### Caching Query Results
+#### Database Query Caching
 
-When working on scripts, you might want to load larger chunks of raw data into
-memory and crunch them in R (ideally with Data Table) to produce your results.
-When just 'playing' or exploring the raw data, you won't really want to wait for
-an unchanged SQL query to run again when rerunning a script to test your R code.
+The configuration in `config/database.yml` supports a `query_cache_ttl` config
+in seconds, which sets the time before a query is repeated to a database
+connection.
 
-Rport's connection accessors allow you to cache results using R's `load` and
-`save` routines.
+This feature is meant to facilitate interactive data exploration, in which the
+same query might be run from a script multiple times within a short time frame.
+Particularly when the query takes long to execute, setting `query_cache_ttl:
+300` will not repeat the same query to a database connection unless 5 minutes
+have passed since the last run.
 
-    rport('development')
+The following snippet exemplifies that:
 
-    # Read the data in memory only if not found in the cache.
-    dat <- rport.read('select app_id, rank from application_ranks', cache=TRUE)
+```R
+library(rport)
 
-    # do crazy crunching on `dat`
+# This will take a long time, so we wait.
+dat <- db('shard1', 'select count(*) from events')
+dat <- NULL
 
-This query will now only run once and subsequent executions of the script will
-read and return the cached R object from the file system.
+# This will now read and return the result from the Rport cache.
+dat <- db('shard1', 'select count(*) from events')
+```
 
-To ensure that nothing bad ever happens to you using this caching, it only works
-in development and it logs clearly when reading from cache. Furthermore, it
-works on a per-connection basis, so the same queries under different connections
-will be cached separately.
+To disable caching either set `query_cache_ttl: 0` in the config or pass
+`query_cache_ttl=0` to the `rport::db()` function call.
 
 ### Parallel report compilation
 
