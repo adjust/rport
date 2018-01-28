@@ -2,6 +2,7 @@
 
 export(.RportRuntimeEnv)
 export(db)
+export(db.connection)
 export(db.disconnect)
 export(rport.app.new)
 export(rport.bootstrap)
