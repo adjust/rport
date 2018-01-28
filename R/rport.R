@@ -95,6 +95,12 @@ db <- function(con.names, sql, max.cache.age=-1, cache.ttl=300) {
     .db.query(con.names[1], sql, cache.ttl=cache.ttl)
 }
 
+#' Get connection by name from config.
+#' @export
+db.connection <- function(con.name) {
+  .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
+}
+
 ### private functions
 
 .cache.eligible <- function(cached, max.cache.age, new.ttl, .timestamp=.current.timestamp) {
@@ -109,7 +115,7 @@ db <- function(con.names, sql, max.cache.age=-1, cache.ttl=300) {
 }
 
 .db.query <- function(con.name, sql, cache.ttl) {
-  con <- .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
+  con <- db.connection(con.name)
 
   rport.log('Executing:', substr(sql, 1, 100), 'on', con.name)
 
