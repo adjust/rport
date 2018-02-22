@@ -67,11 +67,11 @@ db.disconnect <- function() {
 #'
 #' @export
 #'
-db <- function(con.names, sql, max.cache.age=-1, cache.ttl=300) {
+db <- function(con.names, sql, cores=4, max.cache.age=-1, cache.ttl=300) {
   if (length(con.names) > 1) {
     res <- list()
 
-    cl <- makeCluster(min(4, length(con.names)), outfile="")
+    cl <- makeCluster(min(cores, length(con.names)), outfile="")
     tryCatch({
       clusterEvalQ(cl, library(rport, quietly=TRUE))
 
