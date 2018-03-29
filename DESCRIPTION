@@ -1,8 +1,8 @@
 Package: rport
 Type: Package
-Title: Framework for building R analytics apps on top of SQL databases.
-Version: 0.1.0
-Date: 2017-03-10
+Title: Framework for R analytics on big database clusters.
+Version: 1.0.0
+Date: 2018-03-29
 Author: Nikola Chochkov
 Maintainer: Nikola Chochkov <nikola@adjust.com>
 Description: Provides facilities for:
@@ -13,7 +13,7 @@ Description: Provides facilities for:
     * Organizing the growing codebase
 License: MIT License
 Depends:
-    data.table,whisker,optparse,yaml,parallel,digest,brew,RPostgreSQL
+    data.table,whisker,optparse,yaml,parallel,brew,RPostgreSQL
 Collate:
   'bootstrappers.R'
   'rport.R'

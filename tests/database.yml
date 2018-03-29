@@ -4,28 +4,23 @@
 # well with it.
 #
 # `application_name` is the application name for the connection as seen on pg_stat_activity
-# `query_cache_ttl` is the time in seconds before a query is repeated to the
-# Database. To disable caching, set this to 0. It can also be passed to the
-# `rport::db` function.
 #
 # This example defines two PostgreSQL connections - `read` and `write`
 
-read:
-  database: my_database
-  encoding: ''
-  username: my_user
-  password: ''
-  host: localhost
-  port: 5432
-  application_name: my-app
-  query_cache_ttl: 300
-
-write:
-  database: my_database
-  encoding: ''
+db1:
+  driver: PostgreSQL
+  package: RPostgreSQL
+  database: db1
+  encoding:
   username: postgres
-  password: ''
-  host: localhost
   port: 5432
-  application_name: my-app
-  query_cache_ttl: 300
+  application_name: my-analytics-app
+
+db2:
+  driver: PostgreSQL
+  package: RPostgreSQL
+  database: db2
+  encoding:
+  username: postgres
+  port: 5432
+  application_name: my-analytics-app

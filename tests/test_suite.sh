@@ -1,7 +1,16 @@
 #!/usr/bin/bash
 
-psql -U postgres -c 'drop database if exists rporttest' &&
-psql -U postgres -c 'create database rporttest' &&
-Rscript -e 'library(roxygen2); roxygenize(clean=TRUE)' &&
-R CMD INSTALL . &&
-Rscript tests/test_suite.R
+set -e
+
+psql -qc 'drop database if exists db1'
+psql -qc 'create database db1'
+psql -qc 'drop database if exists db2'
+psql -qc 'create database db2'
+
+cd /build
+
+R CMD INSTALL . > /dev/null 2>&1
+
+export RPORT_CONFIG_PATH=/build/tests/database.yml
+
+R --vanilla -e "library(testthat); test_file('tests/db.R')"

@@ -2,10 +2,9 @@
 % Please edit documentation in R/rport.R
 \name{db}
 \alias{db}
-\title{Read from a Database (currently only PostgreSQL) connection. Results could be cached in memory as objects of the
-following format:}
+\title{Read from a Database (currently only PostgreSQL) connection.}
 \usage{
-db(con.names, sql, max.cache.age = -1, cache.ttl = 300)
+db(con.names, sql, cores = 4)
 }
 \arguments{
 \item{con.names}{a vector of connection names as defined in config/database.yml. If more than one connection names is
@@ -16,24 +15,7 @@ queries on sharded setup. For example:
   db(shards, 'select count(*) from events'))
 
 will run in parallel on all 16 shards.}
-
-\item{max.cache.age}{Control cache access before or after reading from the database.
-max.cache.age controls if memory cache should be looked-up before reading from the database. If
-max.cache.age > 0, then cached objects are only read if they were cached less than max.cache.age seconds ago (and
-the cached TTL option does not conflict). If max.cache.age = 0 cached objects are effectively ignored and a new
-query gets made. If max.cache.age < 0, cached objects are looked up indifferent to when they were cached (but the
-cached objects TTL setting is still considered).}
-
-\item{cache.ttl}{Control the TTL setting of an object was just read from the database would be added to the cache. TTL is
-an integer and interpreted as seconds. Setting cache.ttl = 0 will result in the query not being cached.
-cache.ttl < 0 is not enabled for now as it would mean cache indefinitely, which we currently don't want. Default
-value is 300 seconds.}
 }
 \description{
-list(timestamp=1489509849, ttl=10, object=data.table())
-}
-\details{
-`timestamp` is the UNIX timestamp when the object got created.
-`ttl` is the time-to-live for that cached object.
-`object` is the result from the query itself.
+Read from a Database (currently only PostgreSQL) connection.
 }
