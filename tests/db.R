@@ -15,7 +15,7 @@ test_that('db performs read queries', {
 })
 
 context('Sharded Setup')
-test_that('db sharded setup', {
+test_that('db distributes SQL on a DB cluster', {
   received <- db(paste0('db', 1:2), "select 'abc'::text as col")
   expected <- data.table(col=rep('abc', 2))
   expect_equal(expected, received)

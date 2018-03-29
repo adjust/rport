@@ -3,8 +3,8 @@ container_name=rportcnt
 tag=latest
 
 test:
-	R --slave --vanilla -e 'roxygen2::roxygenize(clean=TRUE)'
-	docker exec -w /build ${container_name} bash -c 'bash tests/test_suite.sh'
+	R --slave --vanilla -e 'roxygen2::roxygenize(clean=TRUE)' > /dev/null
+	docker exec -w /build ${container_name} bash -c 'bash tests/run.sh'
 
 build-image:
 	docker build --tag ${image_name} .
