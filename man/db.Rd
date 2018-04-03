@@ -15,7 +15,9 @@ is particularly useful for analytical queries on sharded setup. For example:
   shards <- paste('shard', 1:16, sep='')
   db(shards, 'select count(*) from events'))
 
-will run in parallel on all 16 shards.}
+will run in parallel on all 16 shards.
+
+TODO: exemplify the params binding feature}
 }
 \description{
 Read from a Database (currently only PostgreSQL) connection.

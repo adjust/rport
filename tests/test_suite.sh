@@ -32,11 +32,21 @@ query "db(rep('db1', 10), 'select 1 as col')" > tests/actual/parallel
 # assert cluster of size 4 was started
 assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 4
 # assert query was run 10 times
-assert_match_count 'Executing: select' tests/actual/parallel 10
+assert_match_count 'select' tests/actual/parallel 10
 
 # execute the query 10 times on 5 cores
 query "db(rep('db1', 10), 'select 1 as col', cores=5)" > tests/actual/parallel
 assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 5
-assert_match_count 'Executing: select' tests/actual/parallel 10
+assert_match_count 'select' tests/actual/parallel 10
+
+# execute multiple queries on single connection
+query "db(rep('db1', 10), rep('select 1 as col', 10))" > tests/actual/parallel
+assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 4
+assert_match_count 'select' tests/actual/parallel 10
+
+# execute multiple queries on multiple connections
+query "db('db1', rep('select 1 as col', 10))" > tests/actual/parallel
+assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 4
+assert_match_count 'select' tests/actual/parallel 10
 
 echo "OK"

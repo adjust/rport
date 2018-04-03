@@ -18,8 +18,6 @@
 .RportRuntimeEnv <- new.env()
 
 # TODO: consider what to do with streams
-# TODO: what should we do with potential `db('shard1', 'insert into query')
-# TODO: introduce sth like `db(list(shard1=sql1, shard2=sql2))` that will be run in parallel
 
 #' Formats logging output.
 #' @export
@@ -71,23 +69,71 @@ db.disconnect <- function(con.name=NA) {
 #'
 #' will run in parallel on all 16 shards.
 #'
+#' TODO: exemplify the params binding feature
+#'
 #' @export
 #'
 db <- function(con.names, sql, params=c(), cores=4) {
-  if (length(con.names) > 1) {
-    res <- list()
-
-    cl <- makeCluster(min(cores, length(con.names)), outfile="")
-    tryCatch({
-      clusterEvalQ(cl, library(rport, quietly=TRUE))
-
-      res <- parLapply(cl, con.names, db, sql, params)
-    }, finally=stopCluster(cl))
-
-    return(rbindlist(res))
+  if (length(con.names) == 1 & length(sql) == 1) {
+    return(.db.query(con.names[1], sql, params))
   }
 
-  .db.query(con.names[1], sql, params)
+  if (length(con.names) == 1 & length(sql) > 1) {
+    return(.parallelize.queries(con.names, sql, params, cores))
+  }
+
+  if (length(con.names) > 1 & length(sql) == 1) {
+    return(.parallelize.connections(con.names, sql, params, cores))
+  }
+
+  if (length(con.names) == length(sql)) {
+    return(.parallelize.index(con.names, sql, params, cores))
+  }
+
+  stop('con.names and sql have incompatible lengths')
+}
+
+.parallelize.index <- function(con.names, sql, params, cores) {
+  res <- list()
+
+  cl <- makeCluster(min(cores, length(sql)), outfile="")
+  tryCatch({
+    clusterEvalQ(cl, library(rport, quietly=TRUE))
+
+    res <- parLapply(cl, 1:length(sql), function(index) {
+      db(con.names[index], sql[index], params)
+    })
+  }, finally=stopCluster(cl))
+
+  rbindlist(res)
+}
+
+.parallelize.queries <- function(con.name, sql, params, cores) {
+  res <- list()
+
+  cl <- makeCluster(min(cores, length(sql)), outfile="")
+  tryCatch({
+    clusterEvalQ(cl, library(rport, quietly=TRUE))
+
+    res <- parLapply(cl, 1:length(sql), function(index) {
+      db(con.name, sql[index], params)
+    })
+  }, finally=stopCluster(cl))
+
+  rbindlist(res)
+}
+
+.parallelize.connections <- function(con.names, sql, params, cores) {
+  res <- list()
+
+  cl <- makeCluster(min(cores, length(con.names)), outfile="")
+  tryCatch({
+    clusterEvalQ(cl, library(rport, quietly=TRUE))
+
+    res <- parLapply(cl, con.names, db, sql, params)
+  }, finally=stopCluster(cl))
+
+  rbindlist(res)
 }
 
 # register.db.connector(yml=function() { db('master', 'select * from ivan') })
@@ -121,9 +167,8 @@ reload.db.config <- function() {
   con <- db.connection(con.name)
 
   rport.log('Executing:', substr(sql, 1, 100), 'on', con.name)
-  # print(...)
   res <- data.table(dbGetQuery(con, sql, ...))
-  rport.log('Done', con.name)
+  rport.log('Done:', con.name)
 
   res
 }
