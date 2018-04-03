@@ -1,3 +1,5 @@
+#
+
 - improve working with multible databases.
   - connect lazy
   - don't connect all connections at the same time because we'll have to
@@ -23,11 +25,6 @@ This project is still under development; CRAN release pending.
 Rport is an R package that greatly facilitates common tasks found in many R
 Business Intelligence apps. It bridges R and SQL analytics similarly to how
 Rails bridges Ruby and Web Development.
-
-## TODO
-
-- https://github.com/adjust/rport/issues/2
-- https://github.com/adjust/rport/issues/7
 
 ## Introduction
 

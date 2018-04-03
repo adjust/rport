@@ -13,11 +13,7 @@ Description: Provides facilities for:
     * Organizing the growing codebase
 License: MIT License
 Depends:
-    data.table,whisker,optparse,yaml,parallel,brew,RPostgreSQL
+    data.table,yaml,parallel,RPostgreSQL
 Collate:
-  'bootstrappers.R'
   'rport.R'
-  'initializers.R'
-  'logger.R'
-  'specs.R'
 RoxygenNote: 6.0.1

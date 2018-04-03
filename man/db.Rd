@@ -4,12 +4,13 @@
 \alias{db}
 \title{Read from a Database (currently only PostgreSQL) connection.}
 \usage{
-db(con.names, sql, cores = 4)
+db(con.names, sql, params = c(), cores = 4)
 }
 \arguments{
-\item{con.names}{a vector of connection names as defined in config/database.yml. If more than one connection names is
-given then the same query is performed on all connections in parallel. This is particularly useful for analytical
-queries on sharded setup. For example:
+\item{con.names}{a vector of connection names as defined in database.yml (or
+using custom connection definitions). If more than one connection names is
+given then the same query is performed on all connections in parallel. This
+is particularly useful for analytical queries on sharded setup. For example:
 
   shards <- paste('shard', 1:16, sep='')
   db(shards, 'select count(*) from events'))

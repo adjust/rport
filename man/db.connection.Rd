@@ -2,10 +2,16 @@
 % Please edit documentation in R/rport.R
 \name{db.connection}
 \alias{db.connection}
-\title{Get connection by name from config.}
+\title{Get the DBIConnection connection object by config name. Connection names are
+either defined in database.yml or added at runtime. If connection
+configuration exists, but the DB connection has not yet been established,
+calling this function will also try to connect to the database.}
 \usage{
 db.connection(con.name)
 }
 \description{
-Get connection by name from config.
+Get the DBIConnection connection object by config name. Connection names are
+either defined in database.yml or added at runtime. If connection
+configuration exists, but the DB connection has not yet been established,
+calling this function will also try to connect to the database.
 }

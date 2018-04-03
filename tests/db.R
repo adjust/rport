@@ -1,17 +1,15 @@
 library(rport)
 
 context('Single Connection Setup')
-test_that('db ignores non-read queries', {
-  expect_error(db('db1', 'INSERT INTO tbl(id) (VALUES (1))'))
-  expect_error(db('db1', 'update tbl SET id=1'))
-  expect_error(db('db1', 'DELETE FROM tbl'))
-  expect_error(db('db1', 'TRUNCATE TABLE tbl'))
-})
-
 test_that('db performs read queries', {
   expect_equal(db('db1', 'SELECT 1 AS col'), data.table(col=1))
   expect_equal(db('db1', 'select 1 AS col'), data.table(col=1))
   expect_equal(db('db1', 'with q as (select 1 as col) select * from q'), data.table(col=1))
+})
+
+test_that('db takes query params', {
+  expect_equal(db('db1', 'SELECT 1 AS col WHERE 1 = $1', 1), data.table(col=1))
+  expect_equal(db('db1', 'SELECT 1 AS col WHERE 1 = $1', 2), data.table())
 })
 
 context('Sharded Setup')

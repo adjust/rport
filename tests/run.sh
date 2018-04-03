@@ -11,7 +11,7 @@ cd /build
 
 R CMD INSTALL . > /dev/null
 
-export RPORT_CONFIG_PATH=/build/tests/database.yml
+export RPORT_DB_CONFIG=/build/tests/database.yml
 
 # Run the testthat test suite.
 R --slave --vanilla -e "library(testthat); test_file('tests/db.R')"
