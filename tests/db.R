@@ -45,3 +45,27 @@ test_that('db - multiple SQL queries on multiple DB connections', {
 
   expect_equal(expected, received)
 })
+
+context('connections handling')
+test_that('list.connections and closing all connections', {
+  db.disconnect()
+  expect_equal(list.connections(), list())
+  db('db1', 'select 1')
+  expect_equal(list.connections(), list('db.connections::db1'=db.connection('db1')))
+  db.disconnect()
+  expect_equal(list.connections(), list())
+})
+
+test_that('list.connections and closing one connection', {
+  db.disconnect()
+  expect_equal(list.connections(), list())
+  db('db1', 'select 1')
+  expect_equal(list.connections(), list('db.connections::db1'=db.connection('db1')))
+  db.disconnect('db1')
+  expect_equal(list.connections(), list())
+})
+
+test_that('db.disconnect("nodbname") produces an error', {
+  expect_error(db.disconnect('IVANISNOTADB'))
+})
+

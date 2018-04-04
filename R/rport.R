@@ -1,8 +1,11 @@
-.DB.CONFIG      <- 'db.config'
-.DB.CONNECTIONS <- 'db.connections'
-.RPORT.STORE    <- 'rport.store'
-.DB.DRIVER      <- 'db.driver'
+.DB.CONFIG       <- 'db.config'
+.DB.CONNECTIONS  <- 'db.connections'
+.RPORT.STORE     <- 'rport.store'
+.DB.DRIVER       <- 'db.driver'
 .RPORT.DB.CONFIG <- 'RPORT_DB_CONFIG'
+.RPORT.MAX.CON   <- 'RPORT_MAX_CON'
+
+.DEFAULT.MAX.CON <- 32
 
 #' The structure of the store variable living in .RportRuntimeEnv is like this:
 #'
@@ -16,51 +19,62 @@
 #'
 #' @export
 .RportRuntimeEnv <- new.env()
+assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
 
 # TODO: consider what to do with streams
 
-#' Formats logging output.
 #' @export
-#'
-rport.log <- function(...) {
-  cat(as.character(Sys.time()), '--', Sys.getpid(), ..., "\n")
+list.connections <- function() {
+  store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
+
+  Filter(function(x) inherits(x, 'DBIConnection'), store)
+}
+
+#' Get the DBIConnection connection object by config name. Connection names are
+#' either defined in database.yml or added at runtime. If connection
+#' configuration exists, but the DB connection has not yet been established,
+#' calling this function will also try to connect to the database.
+#' @export
+db.connection <- function(con.name) {
+  .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
 }
 
 #' Disconnect database connections. If `con.name` is not NA, then a connection
 #' is closed by the given name. Otherwise all open database connections are
 #' closed.
+#'
 #' @export
 db.disconnect <- function(con.name=NA) {
   .db.disconnect <- function(con) {
-    if (inherits(con, 'DBIConnection')) stop(con, 'is not a DBI connection')
+    if (!inherits(con, 'DBIConnection')) stop('Attempted to close object of class ', class(con), ', which is not a DBI connection')
 
     tryCatch({
-      r <- dbDisconnect(con)
+      if (!dbDisconnect(con)) stop('Connection failed to close.')
 
-      if (r)
-        rport.log('Connection closed successfully.')
-      else
-        stop('Connection failed to close.')
+      .rport.log('Connection closed successfully.')
     }, error = function(e) {
-      rport.log('Error closing database connection', con, geterrmessage())
+      .rport.log('Error closing database connection', con, geterrmessage())
     })
   }
 
   if (!is.na(con.name)) {
-    .db.disconnect(.get(c(.DB.CONNECTIONS, con.name)))
+    con <- list.connections()[[.build.key(c(.DB.CONNECTIONS, con.name))]]
+    if (is.null(con)) stop('No DBI connection by name: ', con.name, ' has been open.')
+    .db.disconnect(con)
+    .set(c(.DB.CONNECTIONS, con.name), NULL)
     return
   }
 
-  store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
-  cons <- store[names(store)[grep(sprintf('%s::.*', .DB.CONNECTIONS), names(store))]]
-
-  lapply(cons, db.disconnect)
+  lapply(list.connections(), .db.disconnect)
+  assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
 }
 
 #' Read from a Database (currently only PostgreSQL) connection.
 #'
 #' @param con.names a vector of connection names as defined in database.yml (or
-#' using custom connection definitions). If more than one connection names is
+#' using custom connection definitions).
+#'
+#' `db` parallelizes if multiple connections or queries are given. If more than one connection names is
 #' given then the same query is performed on all connections in parallel. This
 #' is particularly useful for analytical queries on sharded setup. For example:
 #'
@@ -69,10 +83,21 @@ db.disconnect <- function(con.name=NA) {
 #'
 #' will run in parallel on all 16 shards.
 #'
-#' TODO: exemplify the params binding feature
+#' If more than one SQL queries is given, then each of them are run in parallel on the
+#' single DB connection. If the same length of connections and the same length
+#' of SQL queries is given, they are parallelized in pairs. See
+#' https://github.com/adjust/rport/ for examples.
+#'
+#' @param cores determines the size of the parallel cluster for parallel
+#' queries.
+#'
+#' @param params binds SQL parameters to the SQL query using parameter binding.
+#' The PostgreSQL R driver takes care for the quoting. Parameter binding is very
+#' important against SQL injection. For example:
+#'
+#'   db(shards, 'select count(*) from events where id = $1', 123)
 #'
 #' @export
-#'
 db <- function(con.names, sql, params=c(), cores=4) {
   if (length(con.names) == 1 & length(sql) == 1) {
     return(.db.query(con.names[1], sql, params))
@@ -92,6 +117,24 @@ db <- function(con.names, sql, params=c(), cores=4) {
 
   stop('con.names and sql have incompatible lengths')
 }
+
+# register.db.connector(yml=function() { db('master', 'select * from ivan') })
+rport.add.connections <- function(ls) {
+
+}
+
+#' Rport stores database configuration settings in `config/database.yml` (or the
+#' file given in the value of environment variable RPORT_DB_CONFIG). Once a
+#' database connection is read from the config, it doesn't get read again. This
+#' function lets the user read the config/database.yml again. It's useful when
+#' the config is changed during an ongoing R session.
+#'
+#' @export
+reload.db.config <- function() {
+  .set(.DB.CONFIG, .read.yml.config())
+}
+
+### Private functions
 
 .parallelize.index <- function(con.names, sql, params, cores) {
   res <- list()
@@ -136,39 +179,20 @@ db <- function(con.names, sql, params=c(), cores=4) {
   rbindlist(res)
 }
 
-# register.db.connector(yml=function() { db('master', 'select * from ivan') })
-rport.add.connections <- function(ls) {
-
-}
-
-#' Get the DBIConnection connection object by config name. Connection names are
-#' either defined in database.yml or added at runtime. If connection
-#' configuration exists, but the DB connection has not yet been established,
-#' calling this function will also try to connect to the database.
-#' @export
-db.connection <- function(con.name) {
-  .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
-}
-
-#' Rport stores database configuration settings in `config/database.yml` (or the
-#' file given in the value of environment variable RPORT_DB_CONFIG). Once a
-#' database connection is read from the config, it doesn't get read again. This
-#' function lets the user read the config/database.yml again. It's useful when
-#' the config is changed during an ongoing R session.
-#'
-#' @export
-reload.db.config <- function() {
-  .set(.DB.CONFIG, .read.yml.config())
-}
-
-### private functions
-
 .db.query <- function(con.name, sql, ...) {
+  # We need to make sure that db() doesn't open more connections than the driver
+  # supports. Potentially here we could be smarter and instead of disconnecting
+  # _all_ connections, we can maintain some kind of usage ranking.
+  if (dbGetInfo(.get.driver())$num_con == .max.con()) {
+    .rport.log('Max DB connections limit by the R driver hit, reconnecting.')
+    db.disconnect()
+  }
+
   con <- db.connection(con.name)
 
-  rport.log('Executing:', substr(sql, 1, 100), 'on', con.name)
+  .rport.log('Executing:', substr(sql, 1, 100), 'on', con.name)
   res <- data.table(dbGetQuery(con, sql, ...))
-  rport.log('Done:', con.name)
+  .rport.log('Done:', con.name)
 
   res
 }
@@ -177,11 +201,11 @@ reload.db.config <- function() {
   conninfo <- .get(c(.DB.CONFIG, con.name), setter=.read.yml.config)[[con.name]]
 
   if (is.null(conninfo))
-    stop(sprintf('Database connection name %s not defined in config/database.yml', con.name))
+    stop(sprintf('Database connection name %s not defined in database.yml', con.name))
 
-  driver <- .get(.DB.DRIVER, setter=dbDriver, "PostgreSQL", max.con=32)
+  d <- .get.driver()
 
-  .dbConnect(drv=driver, application_name=conninfo$application_name,
+  .dbConnect(drv=d, application_name=conninfo$application_name,
                   dbname=conninfo$database, user=conninfo$user,
                   password=conninfo$password, port=conninfo$port,
                   host=conninfo$host)
@@ -218,11 +242,8 @@ reload.db.config <- function() {
 }
 
 .get <- function(keys, setter=NULL, ...) {
-  if (! exists(.RPORT.STORE, envir=.RportRuntimeEnv))
-    assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
-
   store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
-  obj <- store[[.env.key(keys)]]
+  obj <- store[[.build.key(keys)]]
 
   if (!is.null(obj)) return(obj)
 
@@ -235,14 +256,29 @@ reload.db.config <- function() {
 
 .set <- function(keys, value) {
   store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
-  store[[.env.key(keys)]] = value
+  store[[.build.key(keys)]] = value
   assign(.RPORT.STORE, store, envir=.RportRuntimeEnv)
 }
 
-.env.key <- function(keys) {
+.build.key <- function(keys) {
   paste(keys, collapse='::')
 }
 
 .rport.root <- function() {
   getwd()
+}
+
+.rport.log <- function(...) {
+  cat(as.character(Sys.time()), '--', Sys.getpid(), ..., "\n")
+}
+
+.get.driver <- function() {
+  .get(.DB.DRIVER, setter=dbDriver, "PostgreSQL", max.con=.max.con())
+}
+
+.max.con <- function() {
+  if (Sys.getenv(.RPORT.MAX.CON) != '')
+    as.numeric(Sys.getenv(.RPORT.MAX.CON))
+  else
+    .DEFAULT.MAX.CON
 }

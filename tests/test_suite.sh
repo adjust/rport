@@ -27,26 +27,34 @@ query () {
 
 rm -f tests/actual/*.in
 
-# execute the query 10 times on the default cores
+# Execute the query 10 times on the default cores
 query "db(rep('db1', 10), 'select 1 as col')" > tests/actual/parallel
-# assert cluster of size 4 was started
+# Assert cluster of size 4 was started
 assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 4
-# assert query was run 10 times
+# Assert query was run 10 times
 assert_match_count 'select' tests/actual/parallel 10
 
-# execute the query 10 times on 5 cores
+# Execute the query 10 times on 5 cores
 query "db(rep('db1', 10), 'select 1 as col', cores=5)" > tests/actual/parallel
 assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 5
 assert_match_count 'select' tests/actual/parallel 10
 
-# execute multiple queries on single connection
+# Execute multiple queries on single connection
 query "db(rep('db1', 10), rep('select 1 as col', 10))" > tests/actual/parallel
 assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 4
 assert_match_count 'select' tests/actual/parallel 10
 
-# execute multiple queries on multiple connections
+# Execute multiple queries on multiple connections
 query "db('db1', rep('select 1 as col', 10))" > tests/actual/parallel
 assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\.)+' tests/actual/parallel 4
 assert_match_count 'select' tests/actual/parallel 10
+
+# Reconnects if it hits the max driver connections limit
+RPORT_MAX_CON=1 query "db('db1', 'select 1'); db('db2', 'select 1')" > tests/actual/max_con
+assert_match_count 'select 1' tests/actual/max_con 2
+assert_match_count 'Max DB connections limit by the R driver hit, reconnecting. ' tests/actual/max_con 1
+assert_match_count 'Connection closed successfully.' tests/actual/max_con 1
+assert_match_count 'Done: db1' tests/actual/max_con 1
+assert_match_count 'Done: db2' tests/actual/max_con 1
 
 echo "OK"

@@ -2,8 +2,6 @@
 
 * update README
 * allow dynamic connections to be created
-* configure the max.con param
-* reconnect on max.con driver error
 
 - improve working with multible databases.
   - connect lazy
