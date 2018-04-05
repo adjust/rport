@@ -1,4 +1,5 @@
 .DB.CONFIG       <- 'db.config'
+.DATABASE.YML    <- 'database.yml'
 .DB.CONNECTIONS  <- 'db.connections'
 .RPORT.STORE     <- 'rport.store'
 .DB.DRIVER       <- 'db.driver'
@@ -20,8 +21,6 @@
 #' @export
 .RportRuntimeEnv <- new.env()
 assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
-
-# TODO: consider what to do with streams
 
 #' @export
 list.connections <- function() {
@@ -93,7 +92,7 @@ db.disconnect <- function(con.name=NA) {
 #'
 #' @param params binds SQL parameters to the SQL query using parameter binding.
 #' The PostgreSQL R driver takes care for the quoting. Parameter binding is very
-#' important against SQL injection. For example:
+#' important against SQL injection. For example, to get id=123:
 #'
 #'   db(shards, 'select count(*) from events where id = $1', 123)
 #'
@@ -118,20 +117,51 @@ db <- function(con.names, sql, params=c(), cores=4) {
   stop('con.names and sql have incompatible lengths')
 }
 
-# register.db.connector(yml=function() { db('master', 'select * from ivan') })
-rport.add.connections <- function(ls) {
-
+#' This function lets users define DB connection settings from sources other
+#' than the database.yml config. This is useful for DB setups where a master
+#' node maintains a dynamic list of DB nodes. This function only lets you define
+#' the connection settings. The actual connection will be open by a subsequent
+#' `db('my-custom-con1', 'select 1') call.
+#'
+#' This function doesn't check or validate the input, the caller is responsible
+#' for making sure that the list has the correct format, otherwise the
+#' connection (i.e. the `db` call) would fail.
+#'
+#' @param db.config is a list of format:
+#'   list(
+#'     my-custom-con1=list(
+#'       database='db1',
+#'       username='analytics',
+#'       password='',
+#'       host='db-1',
+#'       port=5432,
+#'       application_name='rport'
+#'     ),
+#'     my-custom-con2=list(
+#'       database='db2',
+#'       username='analytics',
+#'       password='',
+#'       host='db-2',
+#'       port=5432,
+#'       application_name='rport'
+#'     )
+#'  )
+#'
+#' @export
+register.connection.settings <- function(db.config) {
+  names(db.config) <- sprintf('%s::%s', .DB.CONFIG, names(db.config))
+  assign(.RPORT.STORE, c(get(.RPORT.STORE, envir=.RportRuntimeEnv), db.config), envir=.RportRuntimeEnv)
 }
 
-#' Rport stores database configuration settings in `config/database.yml` (or the
+#' Rport stores database configuration settings by default in `config/database.yml` (or the
 #' file given in the value of environment variable RPORT_DB_CONFIG). Once a
 #' database connection is read from the config, it doesn't get read again. This
-#' function lets the user read the config/database.yml again. It's useful when
-#' the config is changed during an ongoing R session.
+#' function lets the user reload the YAML config. It's useful when the config is
+#' changed during an ongoing R session.
 #'
 #' @export
 reload.db.config <- function() {
-  .set(.DB.CONFIG, .read.yml.config())
+  .read.yml.config()
 }
 
 ### Private functions
@@ -198,7 +228,9 @@ reload.db.config <- function() {
 }
 
 .db.connect <- function(con.name) {
-  conninfo <- .get(c(.DB.CONFIG, con.name), setter=.read.yml.config)[[con.name]]
+  if (!exists(.DATABASE.YML, envir=.RportRuntimeEnv)) reload.db.config()
+
+  conninfo <- .get(c(.DB.CONFIG, con.name))
 
   if (is.null(conninfo))
     stop(sprintf('Database connection name %s not defined in database.yml', con.name))
@@ -211,29 +243,30 @@ reload.db.config <- function() {
                   host=conninfo$host)
 }
 
-.read.yml.config <- function(root=.rport.root, path=NULL) {
-  if (is.null(path)) {
-    if (Sys.getenv(.RPORT.DB.CONFIG) != '')
-      db.config.file <- Sys.getenv(.RPORT.DB.CONFIG)
-    else
-      db.config.file <- file.path(root(), 'config', 'database.yml')
-  }
+.read.yml.config <- function() {
+  if (Sys.getenv(.RPORT.DB.CONFIG) != '')
+    db.config.file <- Sys.getenv(.RPORT.DB.CONFIG)
+  else
+    db.config.file <- file.path(.rport.root(), 'config', 'database.yml')
 
   if (!file.exists(db.config.file))
     stop('No configuration found here:', db.config.file, '\n',
               'Perhaps you are on the wrong directory.')
 
   db.config <- yaml.load_file(db.config.file)
+  .set(.DATABASE.YML, db.config)
 
   if (is.null(names(db.config)))
     stop('No valid database connections defined in:', db.config.file)
 
-  db.config
+  register.connection.settings(db.config)
 }
 
 # A wrapper around dbConnect()
 # See https://github.com/rstats-db/RPostgres/issues/75 for a better solution
 .dbConnect <- function(drv, application_name, ...) {
+  if (is.null(application_name)) return(dbConnect(drv, ...))
+
   old <- Sys.getenv("PGAPPNAME")
   Sys.setenv(PGAPPNAME=application_name)
   conn <- dbConnect(drv, ...)

@@ -1,6 +1,7 @@
 #
 
 * update README
+* configure query output length
 * allow dynamic connections to be created
 
 - improve working with multible databases.

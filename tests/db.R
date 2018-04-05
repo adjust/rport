@@ -69,3 +69,22 @@ test_that('db.disconnect("nodbname") produces an error', {
   expect_error(db.disconnect('IVANISNOTADB'))
 })
 
+context('register.connection.settings()')
+test_that('can add new connection settings', {
+  expect_error(db('IVANISNOTADB', 'select 1 as col'))
+  expect_equal(db('db1', 'select 1 as col'), data.table(col=1))
+
+  register.connection.settings(list(IVANISNOTADB=list(database='db1')))
+
+  expect_equal(db('IVANISNOTADB', 'select 1 as col'), data.table(col=1))
+  expect_equal(db('db1', 'select 1 as col'), data.table(col=1))
+})
+
+# TODO: test what happens if we overwrite database.yml definitions or vice
+# versa. We need to at any time have one (the last) definition
+
+# TODO: test what happens if we overwrite provide wrong db config
+
+# context('reload.db.config()')
+# test_that('can add new connection settings', {
+# })

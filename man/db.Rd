@@ -26,7 +26,7 @@ https://github.com/adjust/rport/ for examples.}
 
 \item{params}{binds SQL parameters to the SQL query using parameter binding.
 The PostgreSQL R driver takes care for the quoting. Parameter binding is very
-important against SQL injection. For example:
+important against SQL injection. For example, to get id=123:
 
   db(shards, 'select count(*) from events where id = $1', 123)}
 
