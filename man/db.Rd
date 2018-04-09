@@ -36,3 +36,7 @@ queries.}
 \description{
 Read from a Database (currently only PostgreSQL) connection.
 }
+\seealso{
+db.connection, db.disconnect, list.connections, reload.db.config,
+register.connection.settings
+}

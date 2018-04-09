@@ -2,11 +2,7 @@
 % Please edit documentation in R/rport.R
 \name{reload.db.config}
 \alias{reload.db.config}
-\title{Rport stores database configuration settings by default in `config/database.yml` (or the
-file given in the value of environment variable RPORT_DB_CONFIG). Once a
-database connection is read from the config, it doesn't get read again. This
-function lets the user reload the YAML config. It's useful when the config is
-changed during an ongoing R session.}
+\title{Reload database connection config from the database.yml}
 \usage{
 reload.db.config()
 }

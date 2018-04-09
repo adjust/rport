@@ -4,69 +4,8 @@
 .RPORT.STORE     <- 'rport.store'
 .DB.DRIVER       <- 'db.driver'
 .RPORT.DB.CONFIG <- 'RPORT_DB_CONFIG'
-.RPORT.MAX.CON   <- 'RPORT_MAX_CON'
 
 .DEFAULT.MAX.CON <- 32
-
-#' The structure of the store variable living in .RportRuntimeEnv is like this:
-#'
-#' rport.store <- list(
-#'   db.connections::shard1="PgConnection",
-#'   db.connections::shard2="PgConnection",
-#'   ...
-#'   db.config=list(shard1=list(dbname=shard1), shard2=list(dbname=shard2)),
-#'   db.driver="DbDriver",
-#' )
-#'
-#' @export
-.RportRuntimeEnv <- new.env()
-assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
-
-#' @export
-list.connections <- function() {
-  Filter(function(x) inherits(x, 'DBIConnection'), .store())
-}
-
-#' Get the DBIConnection connection object by config name. Connection names are
-#' either defined in database.yml or registered at runtime using
-#' register.connection.settings(). If connection configuration exists,
-#' but the DB connection has not yet been established,
-#' calling this function will also try to connect to the database.
-#'
-#' @export
-db.connection <- function(con.name) {
-  .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
-}
-
-#' Disconnect database connections. If `con.name` is not NA, then a connection
-#' is closed by the given name. Otherwise all open database connections are
-#' closed.
-#'
-#' @export
-db.disconnect <- function(con.name=NA) {
-  .db.disconnect <- function(con) {
-    if (!inherits(con, 'DBIConnection')) stop('Attempted to close object of class ', class(con), ', which is not a DBI connection')
-
-    tryCatch({
-      if (!dbDisconnect(con)) stop('Connection failed to close.')
-
-      .rport.log('Connection closed successfully.')
-    }, error = function(e) {
-      .rport.log('Error closing database connection', con, geterrmessage())
-    })
-  }
-
-  if (!is.na(con.name)) {
-    con <- list.connections()[[.build.key(c(.DB.CONNECTIONS, con.name))]]
-    if (is.null(con)) stop('No DBI connection by name: ', con.name, ' has been open.')
-    .db.disconnect(con)
-    .set(c(.DB.CONNECTIONS, con.name), NULL)
-    return
-  }
-
-  lapply(list.connections(), .db.disconnect)
-  assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
-}
 
 #' Read from a Database (currently only PostgreSQL) connection.
 #'
@@ -96,6 +35,11 @@ db.disconnect <- function(con.name=NA) {
 #'
 #'   db(shards, 'select count(*) from events where id = $1', 123)
 #'
+#' @seealso db.connection, db.disconnect, list.connections, reload.db.config,
+#' register.connection.settings
+#'
+#' @example Check the examples on GitHub https://github.com/adjust/rport/
+#'
 #' @export
 db <- function(con.names, sql, params=c(), cores=4) {
   if (length(con.names) == 1 & length(sql) == 1) {
@@ -117,13 +61,26 @@ db <- function(con.names, sql, params=c(), cores=4) {
   stop('con.names and sql have incompatible lengths')
 }
 
+#' Reload database connection config from the database.yml
+#'
+#' Rport stores database configuration settings by default in `config/database.yml` (or the
+#' file given in the value of environment variable RPORT_DB_CONFIG). Once a
+#' database connection is read from the config, it doesn't get read again. This
+#' function lets the user reload the YAML config. It's useful when the config is
+#' changed during an ongoing R session.
+#'
+#' @export
+reload.db.config <- function() {
+  .read.yml.config()
+}
+
+#' Define DB connection settings at run time.
+#'
 #' This function lets users define DB connection settings from sources other
 #' than the database.yml config. This is useful for DB setups where a master
 #' node maintains a dynamic list of DB nodes. This function only lets you define
 #' the connection settings. The actual connection will be open by a subsequent
-#' `db('my-custom-con1', 'select 1') call.
-#'
-#' This function doesn't check or validate the input, the caller is responsible
+#' `db('my-custom-con1', 'select 1')` call. This function doesn't check or validate the input, the caller is responsible
 #' for making sure that the list has the correct format, otherwise the
 #' connection (i.e. the `db` call) would fail.
 #'
@@ -156,6 +113,8 @@ db <- function(con.names, sql, params=c(), cores=4) {
 #' a database.yml definition, there'll be an error. If strict is FALSE,
 #' connections can be overwritten.
 #'
+#' @seealso reload.db.config, list.connections
+#'
 #' @export
 register.connection.settings <- function(db.config, strict=TRUE) {
   names(db.config) <- sprintf('%s::%s', .DB.CONFIG, names(db.config))
@@ -171,15 +130,61 @@ register.connection.settings <- function(db.config, strict=TRUE) {
   assign(.RPORT.STORE, modifyList(store, db.config), envir=.RportRuntimeEnv)
 }
 
-#' Rport stores database configuration settings by default in `config/database.yml` (or the
-#' file given in the value of environment variable RPORT_DB_CONFIG). Once a
-#' database connection is read from the config, it doesn't get read again. This
-#' function lets the user reload the YAML config. It's useful when the config is
-#' changed during an ongoing R session.
+#' Get the DBIConnection connection object by config name.
+#'
+#' @param con.name connection names are either defined in database.yml or registered
+#' at runtime using register.connection.settings(). If connection configuration exists,
+#' but the DB connection has not yet been established,
+#' calling this function will also try to connect to the database.
+#'
+#' @seealso list.connections, register.connection.settings
 #'
 #' @export
-reload.db.config <- function() {
-  .read.yml.config()
+db.connection <- function(con.name) {
+  .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
+}
+
+#' List open DB connections.
+#'
+#' This only lists all connections that have been open. No new connections will be opened by this call.
+#'
+#' @export
+list.connections <- function() {
+  Filter(function(x) inherits(x, 'DBIConnection'), .store())
+}
+
+#' Disconnect database connections.
+#'
+#' @param con.name specify connection name as defined (in e.g. database.yml).
+#' If it is not NA, then a connection is closed by the given name. Otherwise
+#' all open database connections are closed.
+#'
+#' @seealso list.connections
+#'
+#' @export
+db.disconnect <- function(con.name=NA) {
+  .db.disconnect <- function(con) {
+    if (!inherits(con, 'DBIConnection')) stop('Attempted to close object of class ', class(con), ', which is not a DBI connection')
+
+    tryCatch({
+      if (!dbDisconnect(con)) stop('Connection failed to close.')
+
+      .rport.log('Connection closed successfully.')
+    }, error = function(e) {
+      .rport.log('Error closing database connection', con, geterrmessage())
+    })
+  }
+
+  if (!is.na(con.name)) {
+    con <- list.connections()[[.build.key(c(.DB.CONNECTIONS, con.name))]]
+    if (is.null(con)) stop('No DBI connection by name: ', con.name, ' has been open.')
+    .db.disconnect(con)
+    .set(c(.DB.CONNECTIONS, con.name), NULL)
+    return
+  }
+
+  lapply(list.connections(), .db.disconnect)
+  assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
 }
 
 ### Private functions
@@ -333,9 +338,20 @@ reload.db.config <- function() {
   get(.RPORT.STORE, envir=.RportRuntimeEnv)
 }
 
+# The options here is mostly so that it makes testing easier.
 .max.con <- function() {
-  if (Sys.getenv(.RPORT.MAX.CON) != '')
-    as.numeric(Sys.getenv(.RPORT.MAX.CON))
-  else
-    .DEFAULT.MAX.CON
+  as.numeric(getOption('rport-max-db-driver-connections', default=.DEFAULT.MAX.CON))
 }
+
+#' The structure of the store variable living in .RportRuntimeEnv is like this:
+#'
+#' rport.store <- list(
+#'   db.connections::shard1="PgConnection",
+#'   db.connections::shard2="PgConnection",
+#'   ...
+#'   db.config=list(shard1=list(dbname=shard1), shard2=list(dbname=shard2)),
+#'   db.driver="DbDriver",
+#' )
+.RportRuntimeEnv <- new.env()
+assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
+

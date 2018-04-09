@@ -2,11 +2,7 @@
 % Please edit documentation in R/rport.R
 \name{register.connection.settings}
 \alias{register.connection.settings}
-\title{This function lets users define DB connection settings from sources other
-than the database.yml config. This is useful for DB setups where a master
-node maintains a dynamic list of DB nodes. This function only lets you define
-the connection settings. The actual connection will be open by a subsequent
-`db('my-custom-con1', 'select 1') call.}
+\title{Define DB connection settings at run time.}
 \usage{
 register.connection.settings(db.config, strict = TRUE)
 }
@@ -41,7 +37,14 @@ a database.yml definition, there'll be an error. If strict is FALSE,
 connections can be overwritten.}
 }
 \description{
-This function doesn't check or validate the input, the caller is responsible
+This function lets users define DB connection settings from sources other
+than the database.yml config. This is useful for DB setups where a master
+node maintains a dynamic list of DB nodes. This function only lets you define
+the connection settings. The actual connection will be open by a subsequent
+`db('my-custom-con1', 'select 1')` call. This function doesn't check or validate the input, the caller is responsible
 for making sure that the list has the correct format, otherwise the
 connection (i.e. the `db` call) would fail.
+}
+\seealso{
+reload.db.config, list.connections
 }

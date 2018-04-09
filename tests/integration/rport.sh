@@ -3,6 +3,7 @@
 set -e
 
 OUTPUT_DIR=tests/integration/actual
+mkdir -p $OUTPUT_DIR
 rm -f $OUTPUT_DIR/*.in
 
 source tests/integration/helpers.sh
@@ -30,7 +31,7 @@ assert_match_count 'starting worker pid=[0-9]+ on localhost:[0-9]+ at ([0-9]|:|\
 assert_match_count 'select' $OUTPUT_DIR/parallel 10
 
 # Reconnects if it hits the max driver connections limit
-RPORT_MAX_CON=1 query "db('db1', 'select 1'); db('db2', 'select 1')" > $OUTPUT_DIR/max_con
+query "options('rport-max-db-driver-connections'=1); db('db1', 'select 1'); db('db2', 'select 1')" > $OUTPUT_DIR/max_con
 assert_match_count 'select 1' $OUTPUT_DIR/max_con 2
 assert_match_count 'Max DB connections limit by the R driver hit, reconnecting. ' $OUTPUT_DIR/max_con 1
 assert_match_count 'Connection closed successfully.' $OUTPUT_DIR/max_con 1
@@ -38,7 +39,7 @@ assert_match_count 'Done: db1' $OUTPUT_DIR/max_con 1
 assert_match_count 'Done: db2' $OUTPUT_DIR/max_con 1
 
 # Doesn't reconnect if the same connection is used
-RPORT_MAX_CON=1 query "db('db1', 'select 1'); db('db1', 'select 1')" > $OUTPUT_DIR/max_con
+query "options('rport-max-db-driver-connections'=1); db('db1', 'select 1'); db('db1', 'select 1')" > $OUTPUT_DIR/max_con
 assert_match_count 'select 1' $OUTPUT_DIR/max_con 2
 assert_match_count 'Max DB connections limit by the R driver hit, reconnecting. ' $OUTPUT_DIR/max_con 0
 assert_match_count 'Connection closed successfully.' $OUTPUT_DIR/max_con 0
