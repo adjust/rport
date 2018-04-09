@@ -14,7 +14,7 @@ R CMD INSTALL . > /dev/null
 export RPORT_DB_CONFIG=/build/tests/database.yml
 
 # Run the testthat test suite.
-R --slave --vanilla -e "library(testthat); test_file('tests/db.R')"
+R --slave --vanilla -e "library(testthat); test_file('tests/rport.R')"
 
 # This test suite tests things like parallism and output, which are easier to
 # test by comparing diffs, rather than by using a test framework.

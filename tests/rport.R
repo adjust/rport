@@ -80,11 +80,21 @@ test_that('can add new connection settings', {
   expect_equal(db('db1', 'select 1 as col'), data.table(col=1))
 })
 
+test_that('we cannot overwrite existing connections', {
+  new.settings <- list(db1=list(database='db1'))
+  expect_error(register.connection.settings(new.settings))
+})
+
+test_that('we cannot pass duplicated connection definitions', {
+  new.settings <- list(newdb=list(database='db1'), newdb=list(database='db2'))
+  expect_error(register.connection.settings(new.settings))
+})
+
 # TODO: test what happens if we overwrite database.yml definitions or vice
 # versa. We need to at any time have one (the last) definition
 
 # TODO: test what happens if we overwrite provide wrong db config
 
-# context('reload.db.config()')
+# TODO: context('reload.db.config()')
 # test_that('can add new connection settings', {
 # })

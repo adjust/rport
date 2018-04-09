@@ -24,15 +24,15 @@ assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
 
 #' @export
 list.connections <- function() {
-  store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
-
-  Filter(function(x) inherits(x, 'DBIConnection'), store)
+  Filter(function(x) inherits(x, 'DBIConnection'), .store())
 }
 
 #' Get the DBIConnection connection object by config name. Connection names are
-#' either defined in database.yml or added at runtime. If connection
-#' configuration exists, but the DB connection has not yet been established,
+#' either defined in database.yml or registered at runtime using
+#' register.connection.settings(). If connection configuration exists,
+#' but the DB connection has not yet been established,
 #' calling this function will also try to connect to the database.
+#'
 #' @export
 db.connection <- function(con.name) {
   .get(c(.DB.CONNECTIONS, con.name), setter=.db.connect, con.name)
@@ -150,7 +150,16 @@ db <- function(con.names, sql, params=c(), cores=4) {
 #' @export
 register.connection.settings <- function(db.config) {
   names(db.config) <- sprintf('%s::%s', .DB.CONFIG, names(db.config))
-  assign(.RPORT.STORE, c(get(.RPORT.STORE, envir=.RportRuntimeEnv), db.config), envir=.RportRuntimeEnv)
+
+  if (any(duplicated(names(db.config))))
+    stop('Duplicated connection definitions in the given settings.')
+
+  store <- .store()
+
+  if (any(duplicated(c(names(db.config), names(store)))))
+    stop('Some of the provided connection settings are already defined.')
+
+  assign(.RPORT.STORE, c(store, db.config), envir=.RportRuntimeEnv)
 }
 
 #' Rport stores database configuration settings by default in `config/database.yml` (or the
@@ -210,14 +219,6 @@ reload.db.config <- function() {
 }
 
 .db.query <- function(con.name, sql, ...) {
-  # We need to make sure that db() doesn't open more connections than the driver
-  # supports. Potentially here we could be smarter and instead of disconnecting
-  # _all_ connections, we can maintain some kind of usage ranking.
-  if (dbGetInfo(.get.driver())$num_con == .max.con()) {
-    .rport.log('Max DB connections limit by the R driver hit, reconnecting.')
-    db.disconnect()
-  }
-
   con <- db.connection(con.name)
 
   .rport.log('Executing:', substr(sql, 1, 100), 'on', con.name)
@@ -228,14 +229,21 @@ reload.db.config <- function() {
 }
 
 .db.connect <- function(con.name) {
-  if (!exists(.DATABASE.YML, envir=.RportRuntimeEnv)) reload.db.config()
+  if (!.exists(.DATABASE.YML)) reload.db.config()
 
   conninfo <- .get(c(.DB.CONFIG, con.name))
 
   if (is.null(conninfo))
     stop(sprintf('Database connection name %s not defined in database.yml', con.name))
 
-  d <- .get.driver()
+  # We need to make sure that db() doesn't open more connections than the driver
+  # supports. Potentially here we could be smarter and instead of disconnecting
+  # _all_ connections, we can maintain some kind of usage ranking.
+  d <- .driver()
+  if (dbGetInfo(d)$num_con == .max.con()) {
+    .rport.log('Max DB connections limit by the R driver hit, reconnecting.')
+    db.disconnect()
+  }
 
   .dbConnect(drv=d, application_name=conninfo$application_name,
                   dbname=conninfo$database, user=conninfo$user,
@@ -274,9 +282,12 @@ reload.db.config <- function() {
   conn
 }
 
+.exists <- function(keys) {
+  .build.key(keys) %in% names(.store())
+}
+
 .get <- function(keys, setter=NULL, ...) {
-  store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
-  obj <- store[[.build.key(keys)]]
+  obj <- .store()[[.build.key(keys)]]
 
   if (!is.null(obj)) return(obj)
 
@@ -288,7 +299,7 @@ reload.db.config <- function() {
 }
 
 .set <- function(keys, value) {
-  store <- get(.RPORT.STORE, envir=.RportRuntimeEnv)
+  store <- .store()
   store[[.build.key(keys)]] = value
   assign(.RPORT.STORE, store, envir=.RportRuntimeEnv)
 }
@@ -305,8 +316,12 @@ reload.db.config <- function() {
   cat(as.character(Sys.time()), '--', Sys.getpid(), ..., "\n")
 }
 
-.get.driver <- function() {
+.driver <- function() {
   .get(.DB.DRIVER, setter=dbDriver, "PostgreSQL", max.con=.max.con())
+}
+
+.store <- function() {
+  get(.RPORT.STORE, envir=.RportRuntimeEnv)
 }
 
 .max.con <- function() {

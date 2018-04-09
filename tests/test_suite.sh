@@ -57,4 +57,11 @@ assert_match_count 'Connection closed successfully.' tests/actual/max_con 1
 assert_match_count 'Done: db1' tests/actual/max_con 1
 assert_match_count 'Done: db2' tests/actual/max_con 1
 
+# Doesn't reconnect if the same connection is used
+RPORT_MAX_CON=1 query "db('db1', 'select 1'); db('db1', 'select 1')" > tests/actual/max_con
+assert_match_count 'select 1' tests/actual/max_con 2
+assert_match_count 'Max DB connections limit by the R driver hit, reconnecting. ' tests/actual/max_con 0
+assert_match_count 'Connection closed successfully.' tests/actual/max_con 0
+assert_match_count 'Done: db1' tests/actual/max_con 2
+
 echo "OK"
