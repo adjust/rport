@@ -4,7 +4,7 @@ tag=latest
 
 test:
 	R --slave --vanilla -e 'roxygen2::roxygenize(clean=TRUE)' > /dev/null
-	docker exec -w /build ${container_name} bash -c 'bash tests/run.sh'
+	docker exec -w /build ${container_name} bash -c 'bash tests/suite.sh'
 
 build-image:
 	docker build --tag ${image_name} .

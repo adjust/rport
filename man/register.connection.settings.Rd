@@ -8,28 +8,37 @@ node maintains a dynamic list of DB nodes. This function only lets you define
 the connection settings. The actual connection will be open by a subsequent
 `db('my-custom-con1', 'select 1') call.}
 \usage{
-register.connection.settings(db.config)
+register.connection.settings(db.config, strict = TRUE)
 }
 \arguments{
 \item{db.config}{is a list of format:
- list(
-   my-custom-con1=list(
-     database='db1',
-     username='analytics',
-     password='',
-     host='db-1',
-     port=5432,
-     application_name='rport'
-   ),
-   my-custom-con2=list(
-     database='db2',
-     username='analytics',
-     password='',
-     host='db-2',
-     port=5432,
-     application_name='rport'
-   )
-)}
+  list(
+    my-custom-con1=list(
+      database='db1',
+      username='analytics',
+      password='',
+      host='db-1',
+      port=5432,
+      application_name='rport'
+    ),
+    my-custom-con2=list(
+      database='db2',
+      username='analytics',
+      password='',
+      host='db-2',
+      port=5432,
+      application_name='rport'
+    )
+ )
+
+Note, that if a list with multiple definitions for the same connection name
+is given, there'll be an error.}
+
+\item{strict}{default TRUE. If strict is TRUE, no connection definitions
+cannot be overwritten and if you try to add a connection name that already
+exists - either from an earlier `register.connection.settings()` call or from
+a database.yml definition, there'll be an error. If strict is FALSE,
+connections can be overwritten.}
 }
 \description{
 This function doesn't check or validate the input, the caller is responsible

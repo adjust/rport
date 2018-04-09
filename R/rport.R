@@ -147,8 +147,17 @@ db <- function(con.names, sql, params=c(), cores=4) {
 #'     )
 #'  )
 #'
+#' Note, that if a list with multiple definitions for the same connection name
+#' is given, there'll be an error.
+#'
+#' @param strict default TRUE. If strict is TRUE, no connection definitions
+#' cannot be overwritten and if you try to add a connection name that already
+#' exists - either from an earlier `register.connection.settings()` call or from
+#' a database.yml definition, there'll be an error. If strict is FALSE,
+#' connections can be overwritten.
+#'
 #' @export
-register.connection.settings <- function(db.config) {
+register.connection.settings <- function(db.config, strict=TRUE) {
   names(db.config) <- sprintf('%s::%s', .DB.CONFIG, names(db.config))
 
   if (any(duplicated(names(db.config))))
@@ -156,10 +165,10 @@ register.connection.settings <- function(db.config) {
 
   store <- .store()
 
-  if (any(duplicated(c(names(db.config), names(store)))))
+  if (strict && any(duplicated(c(names(db.config), names(store)))))
     stop('Some of the provided connection settings are already defined.')
 
-  assign(.RPORT.STORE, c(store, db.config), envir=.RportRuntimeEnv)
+  assign(.RPORT.STORE, modifyList(store, db.config), envir=.RportRuntimeEnv)
 }
 
 #' Rport stores database configuration settings by default in `config/database.yml` (or the
@@ -267,7 +276,7 @@ reload.db.config <- function() {
   if (is.null(names(db.config)))
     stop('No valid database connections defined in:', db.config.file)
 
-  register.connection.settings(db.config)
+  register.connection.settings(db.config, strict=FALSE)
 }
 
 # A wrapper around dbConnect()

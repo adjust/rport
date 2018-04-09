@@ -1,0 +1,8 @@
+2018-04-09 13:59:05 -- 7787 Executing: select 1 on db1 
+2018-04-09 13:59:05 -- 7787 Done: db1 
+   ?column?
+1:        1
+2018-04-09 13:59:05 -- 7787 Executing: select 1 on db1 
+2018-04-09 13:59:05 -- 7787 Done: db1 
+   ?column?
+1:        1

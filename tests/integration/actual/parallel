@@ -1,0 +1,35 @@
+starting worker pid=7704 on localhost:11360 at 13:59:03.168
+starting worker pid=7713 on localhost:11360 at 13:59:03.380
+starting worker pid=7723 on localhost:11360 at 13:59:03.586
+starting worker pid=7732 on localhost:11360 at 13:59:03.786
+2018-04-09 13:59:04 -- 7723 Executing: select 1 as col on db1 
+2018-04-09 13:59:042018-04-09 13:59:04 -- 7732 Executing: select 1 as col on db1 
+ --2018-04-09 13:59:04 -- 7704 Executing: select 1 as col on db1 
+ 7713 Executing: select 1 as col on db1 
+2018-04-09 13:59:04 -- 7723 Done: db1 
+2018-04-09 13:59:04 -- 7723 Executing: select 1 as col on db1 
+2018-04-09 13:59:04 -- 7732 Done: db1 
+2018-04-09 13:59:04 -- 7732 Executing: select 1 as col on db1 
+2018-04-09 13:59:04 -- 7704 Done: db1 
+2018-04-09 13:59:04 2018-04-09 13:59:04 -- 7704 Executing: select 1 as col on db1 
+-- 7713 Done: db1 
+2018-04-09 13:59:04 -- 7713 Executing: select 1 as col on db1 
+2018-04-09 13:59:04 -- 7723 Done: db1 
+2018-04-09 13:59:04 -- 7732 Done: db1 
+2018-04-09 13:59:04 -- 7732 Executing: select 1 as col on db1 
+2018-04-09 13:59:04 -- 7732 Done: db1 
+2018-04-09 13:59:04 -- 7704 Done: db1 
+2018-04-09 13:59:04 -- 7704 Executing: select 1 as col on db1 
+2018-04-09 13:59:04 -- 7713 Done: db1 
+2018-04-09 13:59:04 -- 7704 Done: db1 
+    col
+ 1:   1
+ 2:   1
+ 3:   1
+ 4:   1
+ 5:   1
+ 6:   1
+ 7:   1
+ 8:   1
+ 9:   1
+10:   1

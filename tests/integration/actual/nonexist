@@ -1,0 +1,4 @@
+Error in .read.yml.config() : No configuration found here:nonexist.yml
+Perhaps you are on the wrong directory.
+Calls: db ... .get -> setter -> reload.db.config -> .read.yml.config
+Execution halted
