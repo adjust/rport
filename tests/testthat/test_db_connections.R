@@ -56,7 +56,7 @@ test_that('can add new connection settings', {
 
   expect_equal(db('db1', 'select 1 as col'), data.table(col=1))
 
-  register.connection.settings(list(IVANISNOTADB=list(database='db1')))
+  register.connections(list(IVANISNOTADB=list(database='db1')))
 
   expect_equal(db('IVANISNOTADB', 'select 1 as col'), data.table(col=1))
   expect_equal(db('db1', 'select 1 as col'), data.table(col=1))
@@ -65,13 +65,13 @@ test_that('can add new connection settings', {
 test_that('existing connections are overwritten using strict=FALSE', {
   new.settings <- list(db1=list(database='db1'))
   err.msg <- 'Some of the provided connection settings are already defined.'
-  expect_error(register.connection.settings(new.settings), err.msg)
-  expect_error(register.connection.settings(new.settings, strict=FALSE), NA)
+  expect_error(register.connections(new.settings), err.msg)
+  expect_error(register.connections(new.settings, strict=FALSE), NA)
 })
 
 test_that('we cannot pass duplicated connection definitions', {
   new.settings <- list(newdb=list(database='db1'), newdb=list(database='db2'))
-  expect_error(register.connection.settings(new.settings), 'Duplicated connection definitions')
+  expect_error(register.connections(new.settings), 'Duplicated connection definitions')
 })
 
 test_that('Error is thrown for non-existing database config', {
@@ -85,6 +85,6 @@ test_that('connections can be loaded, dynamically setup, reloaded', {
   expect_error(db('db1', 'select 1'), NA)
   expect_error(db('db2', 'select 1'), NA)
   expect_error(db('db3', 'select 1'), 'Database connection name db3 not defined in database.yml')
-  register.connection.settings(list(db3=list(database='db2')))
+  register.connections(list(db3=list(database='db2')))
   expect_error(db('db3', 'select 1'), NA)
 })

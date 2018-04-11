@@ -41,7 +41,7 @@
 #'   db(shards, 'select count(*) from events where id = $1', 123)
 #'
 #' @seealso db.connection, db.disconnect, list.connections, reload.db.config,
-#' register.connection.settings
+#' register.connections
 #'
 #' @example Check the examples on GitHub https://github.com/adjust/rport/
 #'
@@ -114,14 +114,14 @@ reload.db.config <- function() {
 #'
 #' @param strict default TRUE. If strict is TRUE, no connection definitions
 #' cannot be overwritten and if you try to add a connection name that already
-#' exists - either from an earlier `register.connection.settings()` call or from
+#' exists - either from an earlier `register.connections()` call or from
 #' a database.yml definition, there'll be an error. If strict is FALSE,
 #' connections can be overwritten.
 #'
 #' @seealso reload.db.config, list.connections
 #'
 #' @export
-register.connection.settings <- function(db.config, strict=TRUE) {
+register.connections <- function(db.config, strict=TRUE) {
   names(db.config) <- sprintf('%s::%s', .DB.CONFIG, names(db.config))
 
   if (any(duplicated(names(db.config))))
@@ -138,11 +138,11 @@ register.connection.settings <- function(db.config, strict=TRUE) {
 #' Get the DBIConnection connection object by config name.
 #'
 #' @param con.name connection names are either defined in database.yml or registered
-#' at runtime using register.connection.settings(). If connection configuration exists,
+#' at runtime using register.connections(). If connection configuration exists,
 #' but the DB connection has not yet been established,
 #' calling this function will also try to connect to the database.
 #'
-#' @seealso list.connections, register.connection.settings
+#' @seealso list.connections, register.connections
 #'
 #' @export
 db.connection <- function(con.name) {
@@ -286,7 +286,7 @@ db.disconnect <- function(con.name=NA) {
   if (is.null(names(db.config)))
     stop('No valid database connections defined in:', db.config.file)
 
-  register.connection.settings(db.config, strict=FALSE)
+  register.connections(db.config, strict=FALSE)
 }
 
 # A wrapper around dbConnect()

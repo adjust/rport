@@ -8,7 +8,7 @@ db.connection(con.name)
 }
 \arguments{
 \item{con.name}{connection names are either defined in database.yml or registered
-at runtime using register.connection.settings(). If connection configuration exists,
+at runtime using register.connections(). If connection configuration exists,
 but the DB connection has not yet been established,
 calling this function will also try to connect to the database.}
 }
@@ -16,5 +16,5 @@ calling this function will also try to connect to the database.}
 Get the DBIConnection connection object by config name.
 }
 \seealso{
-list.connections, register.connection.settings
+list.connections, register.connections
 }

@@ -19,7 +19,7 @@ codebase (e.g. in a `database.yml` config)
 Rport is distributed as a lightweight R package and you can get the most up-to-date version
 from GitHub, directly from within an R session:
 
-    > library(devtools); install_github('rport', 'adjust')
+    > library(devtools); install_github('adjust/rport')
 
 Next you'll have to define some PostgreSQL connection settings in YML format
 by default here `config/database.yml`. See [the example
@@ -49,8 +49,8 @@ If successful, you should see the following output:
 
 Managing the PostgreSQL connectivity in an analytics environment with even a
 single database can already be very beneficial. This usecase is popular and
-encouraged. The full benefit of `rport` is however unlocked in multi-database
-contexts.
+encouraged. The full benefit of `rport` is however unlocked in contexts where
+data is partitioned/sharded.
 
 Below are some of the usecases for `rport` which emphasize the benefits it
 offers in handling DB connection objects and distributing SQL queries.
@@ -113,8 +113,8 @@ events <- events[, .(events=sum(events)), by='country']
 
 One of our product's database model has data partitioned over several thousand
 of PostgreSQL tables. All tables have the same schema so often we want to do
-analytics on data from many these tables. See the example data model below where
-each app's data is stored on its own table.
+analytics on data from many of these tables. See the example data model below
+where each app's data is stored on its own table.
 
 ```SQL
 create table app_1 (id int, title text, created_at date, installs int,...);
@@ -123,7 +123,7 @@ create table app_2 (id int, title text, created_at date, installs int,...);
 create table app_100 (id int, title text, created_at date, installs int,...);
 ```
 
-To distribute a query on all apps, using `rport` you can do:
+To distribute a query on all apps, using `rport` in R you can do:
 
 ```R
 sql <- sprintf("
@@ -141,17 +141,102 @@ dat <- db('apps-db', sql)
 
 Note that the `sql` variable above is a vector of queries, each being different
 from the others by the table name it reads from. `db('apps-db', sql)` will
-distribute those queries in parallel on the single PostgreSQL database instance.
+distribute those queries in parallel on the single PostgreSQL instance.
 
-### TODO: Multiple Queries on Multiple Databases
+### Multiple Queries on Multiple Databases
 
-Similar to the above usecase, - this is no
+Scaling the usecase above, let's model the raw data on the usage of apps. Each
+user's interaction with an app will be producing raws into our tables:
 
-### TODO: rport on PostgreSQL and Shiny
+```SQL
+create table app_1_20180101 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+create table app_1_20180102 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+create table app_1_20180103 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+...
+create table app_2_20180101 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+...
+```
 
-[Shiny][shiny] is a popular framework for interactive data visualisations in R. The
+We'll also put these tables into multiple PostgreSQL instances.
 
-TODO: add config settings (or maybe simply explain all functions)
+```SQL
+create database db1;
+create database db2;
+create database db3;
+...
+create database db50;
+```
+
+At adjust we actually query hundreds of PostgreSQL databases, where petabytes of
+data live according to a similar partitioning scheme. We have a master
+PostgreSQL node, which contains the meta-data determining, on which database
+data is stored.  Suppose the master instance manages the metadata in a table
+like that:
+
+```SQL
+CREATE TABLE metadata (
+  connection_name text,
+  app_id          int,
+  created_at      date
+)
+```
+
+Let's look at how we can run analytical queries using `rport` in R on such
+setup. We are interested in estimating the adoption rates of iOS versions and
+the activity we see on each version over the last 6 months from our distributed
+raw data.
+
+```R
+library(rport)
+
+# Get all DB connections containing data for the last 180 days.
+metadata <- db('master', '
+  SELECT connection_name, app_id, created_at
+  FROM metadata
+  WHERE created_at > current_date - 180
+')
+
+# SQL query that we want to run on every relevant node.
+sql.template <- "
+  SELECT os_veresion, created_at::date, count(*) AS events
+  FROM app_%d_%d
+  WHERE os_name = 'ios'
+  GROUP BY os_version
+"
+
+# data.table syntax to connection names and the relevant SQL
+metadata[, sql:=sprintf(sql.template, app_id, created_at)]
+
+dat <- db(metadata$connection_name, metadata$sql)
+```
+
+We expect that the database connections are defined at runtime in
+`database.yml`. This doesn't have to be the case and at adjust we define these
+connections dynamically using `register.connections()` after reading
+from the master node.
+
+### rport on PostgreSQL and Shiny
+
+[Shiny][shiny] is a popular framework for interactive data visualisations in R.
+Using the [Pool][pool] project and `rport` you can connect Shiny to either your
+distributed cluster or simply to all different database you might have. Managing
+DB configurations in a centralized file makes it much easier to deploy multiple
+Shiny apps.
+
+## Other Features
+
+The main function that `rport` provides is `db()` and it's exemplified in the
+Usecases section below. Here's an overview of the rest of `rport`'s functions.
+
+```R
+db.connection        # retrieve a connection object from a connection name
+db.disconnect        # disconnect either all open connections or by connection name
+list.connections     # get a list of all open database connections
+register.connections # register a list of new connections (other than those defined in `database.yml`)
+reload.db.config     # reload the `database.yml` connection config file
+```
+
+For more details on each of those functions, check their help from R.
 
 ## Configuration
 
@@ -199,95 +284,15 @@ use of us duplicating the functionality in `rport`.
 We follow the development of the [RPostgres][rpostgres] project closely and we might switch to it as a supported
 PostgreSQL driver in the future.
 
------
-
-This version deprecates some of the unused functionality and focuses rport to distributed database connectivity. Deprecated features are:
-
-* caching (this is left in the hands of the client - for example by using memoise).
-* project/app skeleton building (this can be done using other tools).
-
----
-
-Instead this version 1.0.0 focuses the project on handling Database querying for analytics in various sharding setups and SQL data models. See the updated readme for more examples.
-
-closes https://github.com/adjust/rport/issues/1
-closes https://github.com/adjust/rport/issues/3
-closes https://github.com/adjust/rport/issues/7
-closes https://github.com/adjust/rport/issues/8
-closes https://github.com/adjust/rport/issues/9
-closes https://github.com/adjust/rport/issues/12
-closes https://github.com/adjust/rport/issues/14
-closes https://github.com/adjust/rport/issues/16
-
------
-
-#
-
-* update README
-* configure query output length
-* allow dynamic connections to be created
-
-- improve working with multible databases.
-  - connect lazy
-  - don't connect all connections at the same time because we'll have to
-    maintain dozens of connections most of which we dont use.
-  - don't expect connections to be disconnected within the session but provide
-    disconnect.db()
-- introduce easy access to data in a sharded environment.
-- introduce parallelism that supports execution of functions and not necessarily
-  only simple SQL. The point is that our experience shows that we source data for
-  reports from multiple sources that might each take time and often we work with
-  helpers or enable no-sql. The point is that we have
-
-### Database Connectivity
-
-If you're directly interfacing R's SQL drivers, you'll likely find yourself
-often using the `dbGetQuery(connection, query)` routine, meaning that you need
-to carry your connection object around every time you issue a database query.
-
-#### Multiple Connections Handling
-
-Using Rport in the scenario above, you'll define all your connections in a
-`config/database.yml` file, similarly to what you'd do in other frameworks (e.g.
-Rails). The difference here is that with Rport you can not only define multiple
-environments, but also multiple connections within each environment.
-
-    # bootstrap production environment rport('production')
-
-    # use the handy accessor method for the `read` connection, generated by
-    Rport dat <- rport.read('select me from you')
-
-    # access another database and get more data:
-    old.dat <- rport.backup('select me from old_you')
-
-    # `dat` and `old.dat` are now `data.table` objects with results from the
-    # `production->read` and `production->backup` connections respectively
-
-Few things are worth mentioning in this snippet:
-
-* Rport created the `rport.read` and `rport.backup` methods magically based on
-  the `read` and `backup` database configurations in the `config/database.yml`.
-  Check out the [Example app][sample_app] to see more of this.
-
-* You can have as many database configurations as you like and combine results
-  from all of them into a single R session. We use this feature a lot when doing
-  adjust.io <-> apptrace stuff or when we offload heavy reads to a replication
-  server.
-
-* Note that different configurations could also mean entirely different database
-  servers. Nothing stops you from having PostgreSQL and MySQL results brought
-  together in R by Rport. And you wouldn't even care about the underlying
-  connection mechanics, because Rport will do that for you.
-
-* Rport works with the [Data Table][data_table] package and all the results
-  returned from database queries are `data.table` objects. If you're wondering
-  why we introduced this dependency, just check out this fantastic package from
-  the link above.
-
 ## Contributing
 
-* Running the test suite
-* Send a Pull request
+To run the test suite of `rport` you'll need [Docker][docker]. Check the
+project's Makefile to find your way in the test suite. Build your feature and
+send a Pull Request on GitHub. Or just write an issue first.
+
+## Author
+
+Nikola Chochkov nikola@adjust.com, Berlin, adjust GmbH, Germany
 
 ## License
 
@@ -317,3 +322,5 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 [adjust]: http://adjust.com "Adjust"
 [rpostgres]: https://github.com/r-dbi/RPostgres
 [rpostgresql]: https://cran.r-project.org/web/packages/RPostgreSQL/index.html
+[pool]: https://github.com/rstudio/pool
+[docker]: https://www.docker.com/
