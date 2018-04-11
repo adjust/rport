@@ -5,7 +5,12 @@
 .DB.DRIVER       <- 'db.driver'
 .RPORT.DB.CONFIG <- 'RPORT_DB_CONFIG'
 
-.DEFAULT.MAX.CON <- 32
+.OPTION.MAX.QUERY.LENGTH <- 'rport-max-sql-query-log-length'
+.OPTION.MAX.CON          <- 'rport-max-db-driver-connections'
+.OPTION.DB.CON.CONFIG    <- 'rport-database-yml-file'
+
+.DEFAULT.MAX.CON          <- 32
+.DEFAULT.MAX.QUERY.LENGTH <- 100
 
 #' Read from a Database (currently only PostgreSQL) connection.
 #'
@@ -235,7 +240,7 @@ db.disconnect <- function(con.name=NA) {
 .db.query <- function(con.name, sql, ...) {
   con <- db.connection(con.name)
 
-  .rport.log('Executing:', substr(sql, 1, 100), 'on', con.name)
+  .rport.log('Executing:', substr(sql, 1, .query.output.length()), 'on', con.name)
   res <- data.table(dbGetQuery(con, sql, ...))
   .rport.log('Done:', con.name)
 
@@ -266,8 +271,8 @@ db.disconnect <- function(con.name=NA) {
 }
 
 .read.yml.config <- function() {
-  if (Sys.getenv(.RPORT.DB.CONFIG) != '')
-    db.config.file <- Sys.getenv(.RPORT.DB.CONFIG)
+  if (! is.null(.user.defined.config()))
+    db.config.file <- .user.defined.config()
   else
     db.config.file <- file.path(.rport.root(), 'config', 'database.yml')
 
@@ -340,7 +345,21 @@ db.disconnect <- function(con.name=NA) {
 
 # The options here is mostly so that it makes testing easier.
 .max.con <- function() {
-  as.numeric(getOption('rport-max-db-driver-connections', default=.DEFAULT.MAX.CON))
+  as.numeric(getOption(.OPTION.MAX.CON, default=.DEFAULT.MAX.CON))
+}
+
+.query.output.length <- function() {
+  as.numeric(getOption(.OPTION.MAX.QUERY.LENGTH, default=.DEFAULT.MAX.QUERY.LENGTH))
+}
+
+.user.defined.config <- function() {
+  if (! is.null(getOption(.OPTION.DB.CON.CONFIG)))
+    return(getOption(.OPTION.DB.CON.CONFIG))
+
+  if (Sys.getenv(.RPORT.DB.CONFIG) != '')
+    return(Sys.getenv(.RPORT.DB.CONFIG))
+
+  NULL
 }
 
 #' The structure of the store variable living in .RportRuntimeEnv is like this:
