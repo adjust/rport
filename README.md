@@ -1,307 +1,305 @@
-- improve working with multible databases.
-  - connect lazy
-  - don't connect all connections at the same time because we'll have to
-    maintain dozens of connections most of which we dont use.
-  - don't expect connections to be disconnected within the session but provide
-    disconnect.db()
-- introduce easy access to data in a sharded environment.
-- introduce parallelism that supports execution of functions and not necessarily
-  only simple SQL. The point is that our experience shows that we source data for
-  reports from multiple sources that might each take time and often we work with
-  helpers or enable no-sql. The point is that we have
+# rport - Parallel Querying on Sharded PostgreSQL Clusters for Analytics in R
 
----
-side aspects:
-- Simplified syntax and functionality
-- Bring travis integration
-- code fixes
+Querying PostgreSQL from R is typically done using the [RPostgreSQL][rpostgresql] driver (or the newer
+[RPostgres][rpostgres]). However in both cases it's the responsibility of the analyst to maintain the connection objects
+and pass them on every query. In analytical contexts, where data resides in multiple databases (e.g. sharded setup,
+microservice setup, etc.) the task of maitaining all connection objects, quickly becomes very tedious.
 
-## Disclaimer
+Furthermore, in many partitioning and sharding data architectures, queries could be parallized and run simultaneously to
+get the necessary data more efficiently. However parallelizing the querying could mean even more complexity for the analyst.
 
-This project is still under development; CRAN release pending.
+`rport` solves both of these issues by:
 
-Rport is an R package that greatly facilitates common tasks found in many R
-Business Intelligence apps. It bridges R and SQL analytics similarly to how
-Rails bridges Ruby and Web Development.
+* allowing data scientists to maintain DB connection details outside of their analytics
+codebase (e.g. in a `database.yml` config)
+* providing parallelisation facility for easy SQL query-distribution
 
-## TODO
+## Installation
 
-- https://github.com/adjust/rport/issues/2
-- https://github.com/adjust/rport/issues/7
-
-## Introduction
-
-From our analytics work on data from [Adjust][adjust] and [Apptrace][apptrace],
-we've identified several tasks needed for nearly any new R project.
-
-* Handling multiple database connections within one R session
-
-* Caching results from long SQL statements in development
-
-* Parallel jobs processing
-
-* Building UNIX executables
-
-* Organizing the growing codebase
-
-While R supports all these, there isn't a framework to contain the repeated code
-that you'll end up with when building a multi-projects analytics app.
-
-For our needs we built such a framework and this article presents it. We named
-it Rport and it's open-sourced as an R extension.
-
-## Quick Start
-
-Rport is distributed as an R package and you can get the most up-to-date version
+Rport is distributed as a lightweight R package and you can get the most up-to-date version
 from GitHub, directly from within an R session:
 
-    > library(devtools); install_github('rport', 'adeven')
+    > library(devtools); install_github('adjust/rport')
 
-Then if you want to set up a fresh Rport app do:
+Next you'll have to define some PostgreSQL connection settings in YML format
+by default here `config/database.yml`. See [the example
+database.yml](https://github.com/adjust/rport/blob/master/tests/database.yml)
+for an example.
 
-    > library(rport)
+Given that you have a connection name `db1` (and a running PostgreSQL database),
+you can test by:
 
-    > rport.app.new('BI kingdom', root.dir='~/my_apps/')
-    # help(rport.app.new) for full list of options
+```r
+library(rport)
 
-This will create the file structure of a clean Rport app. Next you'll probably
-want to start setting up different projects for this and that in your new Rport
-app. To do this:
+db('db1', 'select 1')
+```
 
-    > rport.project.new('weekly kpi report', root.dir='~/my_apps/bi_kingdom')
-    # again help(rport.project.new) for more
+If successful, you should see the following output:
 
-Now you've bootstrapped your first Rport app with one project in it for
-reporting Weekly KPIs. The generators created some code for you already so you
-can already see some output by going:
+```
+> db('db1', 'select 1')
+2018-04-10 17:09:04 -- 1468 Executing: select 1 on db1
+2018-04-10 17:09:05 -- 1468 Done: db1
+   ?column?
+1:        1
+```
 
-    $ cd ~/my_apps/bi_kingdom $ ./bin/weekly_kpi_report.R
+## Usecases
 
-Go ahead and browse those generated files, they're well commented and you will
-find some next steps there too.
+Managing the PostgreSQL connectivity in an analytics environment with even a
+single database can already be very beneficial. This usecase is popular and
+encouraged. The full benefit of `rport` is however unlocked in contexts where
+data is partitioned/sharded.
 
-Finally, note that Rport generated some dummy `spec` files for you that you can
-already run:
+Below are some of the usecases for `rport` which emphasize the benefits it
+offers in handling DB connection objects and distributing SQL queries.
 
-    $ ./spec/all
+### rport on Sharded Database Cluster
 
-from your shell and see your new tests outputting:
+Suppose we have 16 database nodes (shards), where data is distributed by some
+key. Below is a sample `config/database.yml`, which we might have on our
+workspace defining all connection settings.
 
-    Specs for weekly_kpi_report : .
+```YML
+shard1:
+  database: db1
+  username: postgres
+  port: 5432
+  application_name: rport
+shard2:
+  database: db2
+  username: postgres
+  port: 5432
+  application_name: rport
 
-    /Users/nikola/rport_app/spec/weekly_kpi_report/main_spec.R
-    file    "main_spec.R"
-    context "Specs for weekly_kpi_report"
-    test    "Make sure you add proper tests here"
-    nb      1
-    failed  0
-    error   FALSE
-    user    0.003
-    system  0
-    real    0.003
+...
 
-Make sure you edit the relevant files in `spec` folder to write real tests for
-your projects.
+shard16:
+  database: db16
+  username: postgres
+  port: 5432
+  application_name: rport
+```
 
-## Rport Apps
+Let's say we want to run the following SQL query on every shard and combine the
+results for analysis in R.
 
-Now that you've set up an Rport app, let's take a more detailed look at it. An
-Rport app would likely contain multiple projects, often serving different
-purposes.  You might have:
+```SQL
+SELECT id, name, city, sum(events) as events
+FROM events
+WHERE country IN ('de', 'fr', 'bg')
+```
 
-* Cron jobs for analytics, reports, calculation and other tasks.
-* A lot of one-off exploration scripts
-* Asynchronous processing of tasks from web apps
-* Standalone web services
-* Others
+To distribute this SQL on all 16 database servers (shards), we can use the
+following R code.
 
-An Rport app with two projects might have the following folder structure:
+```r
+library(rport)
 
-    ├── README.md
-    ├── bin
-    │   ├── monthly_aggregates.R
-    │   └── weekly_kpis_report.R
-    ├── config
-    │   ├── database.yml
-    │   └── settings.R
-    ├── doc
-    │   ├── monthly_aggregates.md
-    │   └── weekly_kpis_report.md
-    ├── lib
-    │   ├── functions
-    │   │   ├── monthly_aggregates
-    │   │   │   └── main.R
-    │   │   └── weekly_kpis_report
-    │   │       └── main.R
-    │   └── opts
-    │   │   ├── monthly_aggregates.R
-    │   │   └── weekly_kpis_report.R
-    │   └── shared
-    ├── log
-    ├── script
-    └── spec
-        ├── all
-        ├── monthly_aggregates
-        │   └── main_spec.R
-        └── weekly_kpi_report
-            └── main_spec.R
+sql <- "
+  SELECT id, name, city, sum(events) as events
+  FROM events
+  WHERE country IN ('de', 'fr', 'bg')
+"
+# Perform intermediate (per-shard) aggregation, parallel on 4 cores by default.
+events <- db(paste0('shard', 1:16), sql)
 
-For an illustration of Rport's features we created a [Demo Rport
-App][sample_app].  Make sure you refer to it along with reading this post.
+# Perform final (in-memory) aggregation on the resulting `data.table`
+events <- events[, .(events=sum(events)), by='country']
+```
 
-## Rport Features
+### Multiple Queries on Single Database
 
-Rport will take care of tedious background tasks, while you can focus on the
-actual explorations and analytics of your data. Let's introduce the core
-features of the package below.
+One of our product's database model has data partitioned over several thousand
+of PostgreSQL tables. All tables have the same schema so often we want to do
+analytics on data from many of these tables. See the example data model below
+where each app's data is stored on its own table.
 
-### Database Connectivity
+```SQL
+create table app_1 (id int, title text, created_at date, installs int,...);
+create table app_2 (id int, title text, created_at date, installs int,...);
+...
+create table app_100 (id int, title text, created_at date, installs int,...);
+```
 
-If you're directly interfacing R's SQL drivers, you'll likely find yourself
-often using the `dbGetQuery(connection, query)` routine, meaning that you need
-to carry your connection object around every time you issue a database query.
+To distribute a query on all apps, using `rport` in R you can do:
 
-#### Multiple Connections Handling
+```R
+sql <- sprintf("
+  SELECT
+    id AS app_id,
+    created_at AS date,
+    sum(installs) installs
+  FROM app_%s
+  WHERE created_at > '2018-01-01'
+  GROUP BY 1, 2
+", 1:100)
 
-Using Rport in the scenario above, you'll define all your connections in a
-`config/database.yml` file, similarly to what you'd do in other frameworks (e.g.
-Rails). The difference here is that with Rport you can not only define multiple
-environments, but also multiple connections within each environment.
+dat <- db('apps-db', sql)
+```
 
-    # bootstrap production environment rport('production')
+Note that the `sql` variable above is a vector of queries, each being different
+from the others by the table name it reads from. `db('apps-db', sql)` will
+distribute those queries in parallel on the single PostgreSQL instance.
 
-    # use the handy accessor method for the `read` connection, generated by
-    Rport dat <- rport.read('select me from you')
+### Multiple Queries on Multiple Databases
 
-    # access another database and get more data:
-    old.dat <- rport.backup('select me from old_you')
+Scaling the usecase above, let's model the raw data on the usage of apps. Each
+user's interaction with an app will be producing raws into our tables:
 
-    # `dat` and `old.dat` are now `data.table` objects with results from the
-    # `production->read` and `production->backup` connections respectively
+```SQL
+create table app_1_20180101 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+create table app_1_20180102 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+create table app_1_20180103 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+...
+create table app_2_20180101 (device_id uuid, created_at timestamp, os_name text, os_version ...);
+...
+```
 
-Few things are worth mentioning in this snippet:
+We'll also put these tables into multiple PostgreSQL instances.
 
-* Rport created the `rport.read` and `rport.backup` methods magically based on
-  the `read` and `backup` database configurations in the `config/database.yml`.
-  Check out the [Example app][sample_app] to see more of this.
+```SQL
+create database db1;
+create database db2;
+create database db3;
+...
+create database db50;
+```
 
-* You can have as many database configurations as you like and combine results
-  from all of them into a single R session. We use this feature a lot when doing
-  adjust.io <-> apptrace stuff or when we offload heavy reads to a replication
-  server.
+At adjust we actually query hundreds of PostgreSQL databases, where petabytes of
+data live according to a similar partitioning scheme. We have a master
+PostgreSQL node, which contains the meta-data determining, on which database
+data is stored.  Suppose the master instance manages the metadata in a table
+like that:
 
-* Note that different configurations could also mean entirely different database
-  servers. Nothing stops you from having PostgreSQL and MySQL results brought
-  together in R by Rport. And you wouldn't even care about the underlying
-  connection mechanics, because Rport will do that for you.
+```SQL
+CREATE TABLE metadata (
+  connection_name text,
+  app_id          int,
+  created_at      date
+)
+```
 
-* Rport works with the [Data Table][data_table] package and all the results
-  returned from database queries are `data.table` objects. If you're wondering
-  why we introduced this dependency, just check out this fantastic package from
-  the link above.
-
-#### Database Query Caching
-
-The configuration in `config/database.yml` supports a `query_cache_ttl` config
-in seconds, which sets the time before a query is repeated to a database
-connection.
-
-This feature is meant to facilitate interactive data exploration, in which the
-same query might be run from a script multiple times within a short time frame.
-Particularly when the query takes long to execute, setting `query_cache_ttl:
-300` will not repeat the same query to a database connection unless 5 minutes
-have passed since the last run.
-
-The following snippet exemplifies that:
+Let's look at how we can run analytical queries using `rport` in R on such
+setup. We are interested in estimating the adoption rates of iOS versions and
+the activity we see on each version over the last 6 months from our distributed
+raw data.
 
 ```R
 library(rport)
 
-# This will take a long time, so we wait.
-dat <- db('shard1', 'select count(*) from events')
-dat <- NULL
+# Get all DB connections containing data for the last 180 days.
+metadata <- db('master', '
+  SELECT connection_name, app_id, created_at
+  FROM metadata
+  WHERE created_at > current_date - 180
+')
 
-# This will now read and return the result from the Rport cache.
-dat <- db('shard1', 'select count(*) from events')
+# SQL query that we want to run on every relevant node.
+sql.template <- "
+  SELECT os_veresion, created_at::date, count(*) AS events
+  FROM app_%d_%d
+  WHERE os_name = 'ios'
+  GROUP BY os_version
+"
+
+# data.table syntax to connection names and the relevant SQL
+metadata[, sql:=sprintf(sql.template, app_id, created_at)]
+
+dat <- db(metadata$connection_name, metadata$sql)
 ```
 
-To disable caching either set `query_cache_ttl: 0` in the config or pass
-`query_cache_ttl=0` to the `rport::db()` function call.
+We expect that the database connections are defined at runtime in
+`database.yml`. This doesn't have to be the case and at adjust we define these
+connections dynamically using `register.connections()` after reading
+from the master node.
 
-### Parallel report compilation
+### rport on PostgreSQL and Shiny
 
-Since R 2.15 the `parallel` package is part of R Core. Rport provides some
-wrappers around that package to address specific use cases.
+[Shiny][shiny] is a popular framework for interactive data visualisations in R.
+Using the [Pool][pool] project and `rport` you can connect Shiny to either your
+distributed cluster or simply to all different database you might have. Managing
+DB configurations in a centralized file makes it much easier to deploy multiple
+Shiny apps.
 
-For example a newsletter or report will likely be constituted of several
-independent items that could probably be generated independently to gain
-performance.
+## Other Features
 
-    rport('production')
+The main function that `rport` provides is `db()` and it's exemplified in the
+Usecases section below. Here's an overview of the rest of `rport`'s functions.
 
-    rport.bootstrap('parallel', cluster.size=8)
+```R
+db.connection        # retrieve a connection object from a connection name
+db.disconnect        # disconnect either all open connections or by connection name
+list.connections     # get a list of all open database connections
+register.connections # register a list of new connections (other than those defined in `database.yml`)
+reload.db.config     # reload the `database.yml` connection config file
+```
 
-    users.stats <- function(opts) {
-      sql <- ' SELECT count(*) FROM users WHERE created_at >= %s'
+For more details on each of those functions, check their help from R - for
+example `?db.connection`.
 
-      rport.apptrace(sprintf(sql, opts$start_date))
-    }
+## Configuration
 
-    products.stats <- function(opts) {
-      sql <- ' SELECT count(*) FROM products WHERE created_at >= %s'
+`rport` allows some configuration through the R's `options()` functionality.
 
-      rport.apptrace(sprintf(sql, opts$start_date))
-    }
+### Custom Database Config
 
-    # run the components in parallel
-    result = rport.parallel (
-      useres   = { users.stats, opts },
-      products = { products.stats, opts }
-    )
+By default `rport` looks for a `config/database.yml` file. Custom `database.yml`
+location could be given in two ways:
 
-    # result is now a list with the results like:
-    # list (users=data.table(..), products=data.table(..))
+* by calling `options('rport-database-yml-file'='~/my-dir/my-config.yml')`
+* by setting an evironment variable `RPORT_DB_CONFIG=~/my-dir/my-config.yml`
 
-### Working with Executables
+### Length of the SQL log
 
-Executables are a common interface to our Rport apps. We use them to schedule
-cron jobs (e.g. reports generation, aggregations, etc.) or to run other
-analytics tasks. Rport uses Rscript for creation of cross-platform executables.
+`rport` logs SQL statements on `db()` call. By default only the first 100
+characters are logged. This length could be changed by:
 
-The `rport.project.new()` initializer already created a file in the `bin/`
-folder for you. Rport will also automatically load all R files relevant to your
-project.
+* `options('rport-max-sql-query-log-length'=111)`
 
-#### CLI options
+### FAQ
 
-Rport manages CLI options using the R standard lib `optparse` package and the
-convention of placing opts files under `lib/opts/my_script_name.R`. Check what
-`rport.project.new()` generated for you above or the [sample app][sample_app]
-for an illustration.
+* Why did you choose only PostgreSQL as supported backend
 
-#### Logging
+The development of Rport has been driven by the internal needs at Adjust, which is a PostgreSQL company. However
+abstracting the RDBMS backend is easily achievable and could be done at future iterations on the project. Contributions
+are also welcome.
 
-Rport writes a lot about what it's doing either interactively or in log files.
-You can use these logs to get an idea about query and script execution times as
-well as debugging.
+* Why not make the project even more lightweight by dropping the YML dependency
 
-The convention for executables is that all output is `sink`ed (including output
-from parallel workers) to `log/my_script_name.log`.
+The concept of `database.yml` connection definitions have been borrowed from the `Ruby on Rails` world. For the time
+being this will stay part of `rport`, but we might in the future offer support for other configuration formats and even
+make the YML dependency obsolete.
 
-## Summary
+* Why did you switch the goal of the project away from a generic framework for analytics apps
 
-Rport is an ambitious project under ongoing development. Be sure to follow the
-[GitHub repository][rport] for all updates.
+The idea of a framework for analytics apps is not dead for us. In a possible future development of such framework,
+`rport` would definitely be a part of it. However, we chose to focus the project on addressing our growing analytics
+needs and we realized we were mainly using the DB connectivity feature of `rport`, so we further developed that. Caching
+was one example where we found that the `memoise` package was exactly what we needed for the purpose and so there was no
+use of us duplicating the functionality in `rport`.
 
-## See more
+* Why don't you consider the newer `RPostgres` driver for PostgreSQL.
 
-Read the [blog post][blog_post] for more of the features.
+We follow the development of the [RPostgres][rpostgres] project closely and we might switch to it as a supported
+PostgreSQL driver in the future.
+
+## Contributing
+
+To run the test suite of `rport` you'll need [Docker][docker]. Check the
+project's Makefile to find your way in the test suite. Build your feature and
+send a Pull Request on GitHub. Or just write an issue first.
+
+## Author
+
+Nikola Chochkov nikola@adjust.com, Berlin, adjust GmbH, Germany
 
 ## License
 
 This Software is licensed under the MIT License.
 
-Copyright (c) 2012 adeven GmbH, http://www.adeven.com
+Copyright (c) 2018 adjust GmbH, http://www.adjust.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -320,9 +318,10 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-[rport]: http://github.com/adeven/rport "Rport Home"
-[sample_app]: http://github.com/adeven/rport_demo "A Sample Rport App"
-[data_table]: http://cran.r-project.org/web/packages/data.table/index.html "The Data Table R Package"
-[adjust]: http://adjust.io "Adjust"
-[apptrace]: http://apptrace.com "Apptrace"
-[blog_post]: http://big-elephants.com/2013-10/rport-business-intelligence-apps-with-r/ "Rport Blog Post"
+[shiny]: https://shiny.rstudio.com "Shiny"
+[data_table]: https://github.com/Rdatatable/data.table "The Data Table R Package"
+[adjust]: http://adjust.com "Adjust"
+[rpostgres]: https://github.com/r-dbi/RPostgres
+[rpostgresql]: https://cran.r-project.org/web/packages/RPostgreSQL/index.html
+[pool]: https://github.com/rstudio/pool
+[docker]: https://www.docker.com/

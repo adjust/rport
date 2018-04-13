@@ -2,10 +2,18 @@
 % Please edit documentation in R/rport.R
 \name{db.disconnect}
 \alias{db.disconnect}
-\title{Disconnect all open Database connections.}
+\title{Disconnect database connections.}
 \usage{
-db.disconnect()
+db.disconnect(con.name = NA)
+}
+\arguments{
+\item{con.name}{specify connection name as defined (in e.g. database.yml).
+If it is not NA, then a connection is closed by the given name. Otherwise
+all open database connections are closed.}
 }
 \description{
-Disconnect all open Database connections.
+Disconnect database connections.
+}
+\seealso{
+list.connections
 }
