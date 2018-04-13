@@ -17,6 +17,3 @@ start-container:
 
 stop-container:
 	docker stop ${container_name}
-
-clear-images:
-	docker rmi $$(docker images -f 'dangling=true' -q) -f || true

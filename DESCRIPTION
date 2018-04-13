@@ -1,6 +1,6 @@
 Package: rport
 Type: Package
-Title: Framework for R analytics on big database clusters.
+Title: Connection management and SQL parallelisation for R analytics on big database clusters.
 Version: 1.0.0
 Date: 2018-03-29
 Author: Nikola Chochkov

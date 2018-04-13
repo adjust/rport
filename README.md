@@ -236,7 +236,8 @@ register.connections # register a list of new connections (other than those defi
 reload.db.config     # reload the `database.yml` connection config file
 ```
 
-For more details on each of those functions, check their help from R.
+For more details on each of those functions, check their help from R - for
+example `?db.connection`.
 
 ## Configuration
 

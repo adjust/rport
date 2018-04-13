@@ -10,25 +10,27 @@ db(con.names, sql, params = c(), cores = 4)
 \item{con.names}{a vector of connection names as defined in database.yml (or
 using custom connection definitions).
 
-`db` parallelizes if multiple connections or queries are given. If more than one connection names is
+\code{db} parallelizes if multiple connections or queries are given. If more than one connection names is
 given then the same query is performed on all connections in parallel. This
 is particularly useful for analytical queries on sharded setup. For example:
-
+\preformatted{
   shards <- paste('shard', 1:16, sep='')
   db(shards, 'select count(*) from events'))
+}
 
 will run in parallel on all 16 shards.
 
 If more than one SQL queries is given, then each of them are run in parallel on the
 single DB connection. If the same length of connections and the same length
 of SQL queries is given, they are parallelized in pairs. See
-https://github.com/adjust/rport/ for examples.}
+\link{https://github.com/adjust/rport/} for examples.}
 
 \item{params}{binds SQL parameters to the SQL query using parameter binding.
 The PostgreSQL R driver takes care for the quoting. Parameter binding is very
 important against SQL injection. For example, to get id=123:
-
-  db(shards, 'select count(*) from events where id = $1', 123)}
+\preformatted{
+  db(shards, 'select count(*) from events where id = $1', 123)
+}}
 
 \item{cores}{determines the size of the parallel cluster for parallel
 queries.}

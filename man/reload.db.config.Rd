@@ -7,7 +7,7 @@
 reload.db.config()
 }
 \description{
-Rport stores database configuration settings by default in `config/database.yml` (or the
+Rport stores database configuration settings by default in \code{config/database.yml} (or the
 file given in the value of environment variable RPORT_DB_CONFIG). Once a
 database connection is read from the config, it doesn't get read again. This
 function lets the user reload the YAML config. It's useful when the config is
