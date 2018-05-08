@@ -4,7 +4,7 @@
 \alias{db}
 \title{Read from a Database (currently only PostgreSQL) connection.}
 \usage{
-db(con.names, sql, params = c(), cores = 4)
+db(con.names, sql, params = c(), cores = 4, outfile = "")
 }
 \arguments{
 \item{con.names}{a vector of connection names as defined in database.yml (or
@@ -34,6 +34,8 @@ important against SQL injection. For example, to get id=123:
 
 \item{cores}{determines the size of the parallel cluster for parallel
 queries.}
+
+\item{outfile}{the outfile variable passed on to makeCluster}
 }
 \description{
 Read from a Database (currently only PostgreSQL) connection.

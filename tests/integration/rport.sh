@@ -45,4 +45,10 @@ assert_match_count 'Max DB connections limit by the R driver hit, reconnecting. 
 assert_match_count 'Connection closed successfully.' $OUTPUT_DIR/max_con 0
 assert_match_count 'Done: db1' $OUTPUT_DIR/max_con 2
 
+# Passes the output param to makeCluster
+query "db(c('db1', 'db2'), 'select 1')" > $OUTPUT_DIR/no-output
+assert_match_count '^.*$' $OUTPUT_DIR/no-output 9
+query "db(c('db1', 'db2'), 'select 1', outfile='/dev/null')" > $OUTPUT_DIR/no-output
+assert_match_count '^.*$' $OUTPUT_DIR/no-output 3
+
 echo "OK"
