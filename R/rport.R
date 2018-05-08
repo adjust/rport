@@ -42,25 +42,27 @@
 #'   db(shards, 'select count(*) from events where id = $1', 123)
 #' }
 #'
+#' @param outfile the outfile variable passed on to makeCluster
+#'
 #' @seealso db.connection, db.disconnect, list.connections, reload.db.config,
 #' register.connections
 #'
 #' @export
-db <- function(con.names, sql, params=c(), cores=4) {
+db <- function(con.names, sql, params=c(), cores=4, outfile='') {
   if (length(con.names) == 1 & length(sql) == 1) {
     return(.db.query(con.names[1], sql, params))
   }
 
   if (length(con.names) == 1 & length(sql) > 1) {
-    return(.parallelize.queries(con.names, sql, params, cores))
+    return(.parallelize.queries(con.names, sql, params, cores, outfile))
   }
 
   if (length(con.names) > 1 & length(sql) == 1) {
-    return(.parallelize.connections(con.names, sql, params, cores))
+    return(.parallelize.connections(con.names, sql, params, cores, outfile))
   }
 
   if (length(con.names) == length(sql)) {
-    return(.parallelize.index(con.names, sql, params, cores))
+    return(.parallelize.index(con.names, sql, params, cores, outfile))
   }
 
   stop('con.names and sql have incompatible lengths')
@@ -196,10 +198,10 @@ db.disconnect <- function(con.name=NA) {
 
 ### Private functions
 
-.parallelize.index <- function(con.names, sql, params, cores) {
+.parallelize.index <- function(con.names, sql, params, cores, outfile) {
   res <- list()
 
-  cl <- makeCluster(min(cores, length(sql)), outfile="")
+  cl <- makeCluster(min(cores, length(sql)), outfile=outfile)
   tryCatch({
     clusterEvalQ(cl, library(rport, quietly=TRUE))
 
@@ -211,10 +213,10 @@ db.disconnect <- function(con.name=NA) {
   rbindlist(res)
 }
 
-.parallelize.queries <- function(con.name, sql, params, cores) {
+.parallelize.queries <- function(con.name, sql, params, cores, outfile) {
   res <- list()
 
-  cl <- makeCluster(min(cores, length(sql)), outfile="")
+  cl <- makeCluster(min(cores, length(sql)), outfile=outfile)
   tryCatch({
     clusterEvalQ(cl, library(rport, quietly=TRUE))
 
@@ -226,10 +228,10 @@ db.disconnect <- function(con.name=NA) {
   rbindlist(res)
 }
 
-.parallelize.connections <- function(con.names, sql, params, cores) {
+.parallelize.connections <- function(con.names, sql, params, cores, outfile) {
   res <- list()
 
-  cl <- makeCluster(min(cores, length(con.names)), outfile="")
+  cl <- makeCluster(min(cores, length(con.names)), outfile=outfile)
   tryCatch({
     clusterEvalQ(cl, library(rport, quietly=TRUE))
 
