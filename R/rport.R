@@ -377,4 +377,3 @@ db.disconnect <- function(con.name=NA) {
 #' )
 .RportRuntimeEnv <- new.env()
 assign(.RPORT.STORE, list(), envir=.RportRuntimeEnv)
-
