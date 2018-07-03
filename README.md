@@ -239,6 +239,29 @@ reload.db.config     # reload the `database.yml` connection config file
 For more details on each of those functions, check their help from R - for
 example `?db.connection`.
 
+## Flexible data inserts using PostgreSQL COPY
+
+The R DBI interface already supports a function called `dbWriteTable`, which the
+Postgres driver implements using SQL `COPY`. However the implementation isn't
+flexible enough and among other shortages it:
+
+* doesn't allow custom columns for the `COPY` and thus you can't benefit from
+  default values on the underlying PostgreSQL table.
+* can't benefit from transactions that `COPY` into temp tables (e.g. `CREATE
+  TABLE my_temp_table (...) ON COMMIT DROP`)
+
+`rport` has a stripped down implementation which gives you the flexibility to
+address these. Example usage:
+
+```R
+# Suppose we have a table called my_pg_table
+dat <- data.table(ts=as.POSIXct('2013-01-01 00:00:10'), id=1:10, bl=TRUE)
+con <- db.connection('db1')
+tbl.name <- 'my_pg_table'
+
+pg.copy(con, tbl.name, dat)
+```
+
 ## Configuration
 
 `rport` allows some configuration through the R's `options()` functionality.
