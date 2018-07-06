@@ -12,6 +12,4 @@ Depends:
     data.table,yaml,parallel,RPostgreSQL
 Suggests:
     testthat
-Collate:
-  'rport.R'
 RoxygenNote: 6.0.1
