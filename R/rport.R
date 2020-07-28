@@ -268,7 +268,7 @@ db.disconnect <- function(con.name=NA) {
     db.disconnect()
   }
 
-  .dbConnect(drv=d, application_name=conninfo$application_name,
+  .dbConnect(drv=d, application_name='rport',
                   dbname=conninfo$database, user=conninfo$user,
                   password=conninfo$password, port=conninfo$port,
                   host=conninfo$host)
